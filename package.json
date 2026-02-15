@@ -12,11 +12,16 @@
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f postgres",
     "db:reset": "docker-compose down -v && docker-compose up -d",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+	"prepare": "husky install"
   },
   "devDependencies": {
-    "turbo": "^1.11.0",
+    "@commitlint/cli": "^20.4.1",
+    "@commitlint/config-conventional": "^20.4.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.1.0",
+    "turbo": "^1.11.0",
     "typescript": "^5.3.0"
   },
   "packageManager": "pnpm@10.29.3"
