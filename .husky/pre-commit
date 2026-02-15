@@ -1,16 +1,20 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 echo "🔍 Running pre-commit checks..."
 
-# Run lint and typecheck
-pnpm run lint || {
+# Lint and format staged files only (FAST)
+pnpm exec lint-staged || {
   echo "❌ Linting failed. Please fix errors before committing."
   exit 1
 }
 
+# Typecheck all files
 pnpm run typecheck || {
   echo "❌ Type checking failed. Please fix errors before committing."
+  exit 1
+}
+
+# Run unit tests (FAST - only for changed files)
+pnpm run test:changed || {
+  echo "❌ Unit tests failed. Please fix errors before committing."
   exit 1
 }
 

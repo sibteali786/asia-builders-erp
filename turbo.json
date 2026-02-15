@@ -13,6 +13,14 @@
       "dependsOn": ["build"],
       "outputs": ["coverage/**"]
     },
+    "test:changed": {
+      "cache": false,
+      "outputs": []
+    },
+    "test:watch": {
+      "cache": false,
+      "persistent": true
+    },
     "lint": {
       "outputs": []
     },
