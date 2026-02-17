@@ -4,9 +4,7 @@
   "description": "",
   "main": "index.js",
   "types": "dist/index.d.ts",
-  "scripts": {
-    "dev": "tsc --watch"
-  },
+  "scripts": {},
   "keywords": [],
   "author": "",
   "license": "ISC",
