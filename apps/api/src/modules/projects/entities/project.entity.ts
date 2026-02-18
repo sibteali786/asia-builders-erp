@@ -1,10 +1,10 @@
 import { Column, Entity, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { SoftDeleteBaseEntity } from '../../../common/entities/base.entity';
-import { User } from 'src/modules/users/entities/user.entity';
 import { Transaction } from '../../transactions/entities/transaction.entity';
 import { ProjectVendor } from '../../vendors/entities/project-vendor.entity';
 import { VendorAgreement } from '../../vendors/entities/vendor-agreement.entity';
 import { Investment } from '../../investments/entities/investment.entity';
+import { User } from '../../users/entities/user.entity';
 
 export enum ProjectStatus {
   ACTIVE = 'ACTIVE',
