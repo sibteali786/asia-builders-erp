@@ -29,7 +29,7 @@
   "packageManager": "pnpm@10.29.3",
   "lint-staged": {
     "apps/api/**/*.ts": [
-      "eslint --fix",
+      "eslint --fix --config apps/api/eslint.config.mjs",
       "prettier --write"
     ],
     "apps/web/**/*.{ts,tsx}": [
