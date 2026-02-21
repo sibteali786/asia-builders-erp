@@ -74,7 +74,20 @@ export class AuthService {
   }
 
   async validateUser(userId: number) {
-    return this.userRepo.findOne({ where: { id: userId } });
+    return this.userRepo.findOne({
+      where: { id: userId },
+      select: [
+        'id',
+        'email',
+        'firstName',
+        'lastName',
+        'phone',
+        'role',
+        'avatarUrl',
+        'createdAt',
+        'updatedAt',
+      ],
+    });
   }
 
   private generateToken(user: User) {
