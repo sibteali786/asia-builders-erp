@@ -1,11 +1,11 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 import { User } from '../users/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import * as types from '../../common/imports/types';
 
 @Injectable()
 export class AuthService {
@@ -13,6 +13,8 @@ export class AuthService {
     @InjectRepository(User)
     private userRepo: Repository<User>,
     private jwtService: JwtService,
+    @Inject(types.BCRYPT_TOKEN)
+    private readonly bcrypt: types.BcryptType,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -24,7 +26,7 @@ export class AuthService {
     }
 
     // Hash password
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const passwordHash = await this.bcrypt.hash(dto.password, 10);
 
     // Create user
     const user = this.userRepo.create({
@@ -55,7 +57,7 @@ export class AuthService {
     }
 
     // Check password
-    const valid = await bcrypt.compare(dto.password, user.passwordHash);
+    const valid = await this.bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) {
       throw new UnauthorizedException('Invalid credentials');
     }
