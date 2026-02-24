@@ -5,10 +5,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { User, UserRole } from '../users/entities/user.entity';
+import { User } from '../users/entities/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException } from '@nestjs/common';
 import { BCRYPT_TOKEN } from '../../common/imports/types';
+import {
+  createMockLoginDto,
+  createMockRegisterDto,
+  createMockUser,
+} from '../../test/fixtures/user.fixtures';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -17,29 +22,8 @@ describe('AuthService', () => {
   let mockBcrypt: any;
 
   // Test fixtures
-  const mockUser = {
-    id: 1,
-    email: 'test@example.com',
-    passwordHash: '$2b$10$hashedPassword',
-    firstName: 'John',
-    lastName: 'Doe',
-    role: UserRole.REVIEWER,
-    isActive: true,
-    phone: null,
-    avatarUrl: null,
-    lastLoginAt: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
-  const mockRegisterDto = {
-    email: 'test@example.com',
-    password: 'password123',
-    firstName: 'John',
-    lastName: 'Doe',
-    phone: '123456789',
-    role: UserRole.REVIEWER,
-  };
+  const mockUser = createMockUser();
+  const mockRegisterDto = createMockRegisterDto();
 
   beforeEach(async () => {
     mockUserRepo = {
@@ -169,10 +153,7 @@ describe('AuthService', () => {
   });
 
   describe('login()', () => {
-    const mockLoginDto = {
-      email: 'test@example.com',
-      password: 'password123',
-    };
+    const mockLoginDto = createMockLoginDto();
 
     it('should successfully login with valid credentials', async () => {
       mockUserRepo.findOne.mockResolvedValue(mockUser);
