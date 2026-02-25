@@ -36,7 +36,7 @@ import { Document } from '../modules/documents/entities/document.entity';
           InvestmentValueUpdate,
           Document,
         ],
-        synchronize: config.get('NODE_ENV') === 'development',
+        synchronize: false,
         logging: config.get('NODE_ENV') === 'development',
       }),
     }),

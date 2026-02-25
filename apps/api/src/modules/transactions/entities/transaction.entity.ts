@@ -57,9 +57,6 @@ export class Transaction extends SoftDeleteBaseEntity {
   })
   physicalFileReference: string | null;
 
-  @Column({ name: 'balance_after', type: 'decimal', precision: 15, scale: 2 })
-  balanceAfter: number;
-
   @Column({ type: 'text', nullable: true })
   notes: string | null;
 

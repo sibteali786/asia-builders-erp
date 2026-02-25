@@ -21,9 +21,6 @@ export class Project extends SoftDeleteBaseEntity {
   @Column({ length: 500 })
   location: string;
 
-  @Column({ name: 'initial_budget', type: 'decimal', precision: 15, scale: 2 })
-  initialBudget: number;
-
   @Column({ name: 'start_date', type: 'date' })
   startDate: Date;
 
