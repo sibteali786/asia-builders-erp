@@ -1,14 +1,7 @@
-import {
-  Column,
-  Entity,
-  OneToMany,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Transaction } from './transaction.entity';
+import { SoftDeleteBaseEntity } from '../../../common/entities/base.entity';
 
 export enum CategoryType {
   INCOME = 'INCOME',
@@ -16,10 +9,7 @@ export enum CategoryType {
 }
 
 @Entity('transaction_categories')
-export class TransactionCategory {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
-  id: number;
-
+export class TransactionCategory extends SoftDeleteBaseEntity {
   @Column({ length: 100, unique: true })
   name: string;
 
@@ -31,9 +21,6 @@ export class TransactionCategory {
 
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
 
   // Relations
   @ManyToOne(() => User, { nullable: true })
