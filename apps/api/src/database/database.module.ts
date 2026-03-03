@@ -5,7 +5,6 @@ import { User } from '../modules/users/entities/user.entity';
 import { Project } from '../modules/projects/entities/project.entity';
 import { Vendor } from '../modules/vendors/entities/vendor.entity';
 import { ProjectVendor } from '../modules/vendors/entities/project-vendor.entity';
-import { VendorAgreement } from '../modules/vendors/entities/vendor-agreement.entity';
 import { Transaction } from '../modules/transactions/entities/transaction.entity';
 import { TransactionCategory } from '../modules/transactions/entities/transaction-category.entity';
 import { Investment } from '../modules/investments/entities/investment.entity';
@@ -29,7 +28,6 @@ import { Document } from '../modules/documents/entities/document.entity';
           Project,
           Vendor,
           ProjectVendor,
-          VendorAgreement,
           Transaction,
           TransactionCategory,
           Investment,

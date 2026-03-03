@@ -2,7 +2,6 @@ import { Column, Entity, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { SoftDeleteBaseEntity } from '../../../common/entities/base.entity';
 import { Transaction } from '../../transactions/entities/transaction.entity';
 import { ProjectVendor } from '../../vendors/entities/project-vendor.entity';
-import { VendorAgreement } from '../../vendors/entities/vendor-agreement.entity';
 import { Investment } from '../../investments/entities/investment.entity';
 import { User } from '../../users/entities/user.entity';
 
@@ -59,9 +58,6 @@ export class Project extends SoftDeleteBaseEntity {
 
   @OneToMany(() => ProjectVendor, (pv) => pv.project)
   projectVendors: ProjectVendor[];
-
-  @OneToMany(() => VendorAgreement, (va) => va.project)
-  vendorAgreements: VendorAgreement[];
 
   @OneToMany(() => Investment, (i) => i.sourceProject)
   investments: Investment[];

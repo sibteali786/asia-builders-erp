@@ -16,10 +16,23 @@ export enum PaymentMethod {
   BANK_TRANSFER = 'BANK_TRANSFER',
 }
 
+export enum TransactionStatus {
+  PAID = 'PAID',
+  DUE = 'DUE',
+}
+
 @Entity('transactions')
 export class Transaction extends SoftDeleteBaseEntity {
   @Column({ name: 'transaction_type', type: 'varchar', length: 20 })
   transactionType: TransactionType;
+
+  @Column({
+    name: 'status',
+    type: 'varchar',
+    length: 20,
+    default: TransactionStatus.PAID,
+  })
+  status: TransactionStatus;
 
   @Column({ name: 'transaction_date', type: 'date' })
   transactionDate: Date;

@@ -66,7 +66,6 @@ export class ProjectsService {
         'p.status          AS status',
         'p.start_date      AS "startDate"',
         'p.completion_date AS "completionDate"',
-        'p.initial_budget  AS "initialBudget"',
         'p.sale_price      AS "salePrice"',
         'p.sale_date       AS "saleDate"',
         'p.notes           AS notes',

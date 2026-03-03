@@ -2,7 +2,6 @@ import {
   IsString,
   IsNotEmpty,
   IsOptional,
-  IsNumber,
   IsDateString,
   IsEnum,
   MaxLength,
@@ -13,12 +12,12 @@ import { ApiProperty } from '@nestjs/swagger';
 export class CreateProjectDto {
   @ApiProperty({
     example: 'New Website Development',
-    description: 'Title of the project',
+    description: 'Name of the project',
   })
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  title: string;
+  name: string;
 
   @ApiProperty({
     example:
@@ -29,13 +28,6 @@ export class CreateProjectDto {
   @IsNotEmpty()
   @MaxLength(500)
   location: string;
-
-  @ApiProperty({
-    example: 100000,
-    description: 'Initial budget of the project, e.g., 100000',
-  })
-  @IsNumber()
-  initialBudget: number;
 
   @IsDateString()
   @ApiProperty({

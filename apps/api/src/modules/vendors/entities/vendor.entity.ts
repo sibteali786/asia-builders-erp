@@ -2,7 +2,6 @@ import { Column, Entity, OneToMany } from 'typeorm';
 import { SoftDeleteBaseEntity } from '../../../common/entities/base.entity';
 import { Transaction } from '../../transactions/entities/transaction.entity';
 import { ProjectVendor } from './project-vendor.entity';
-import { VendorAgreement } from './vendor-agreement.entity';
 
 export enum VendorType {
   CONTRACTOR = 'CONTRACTOR',
@@ -17,7 +16,14 @@ export class Vendor extends SoftDeleteBaseEntity {
 
   @Column({ name: 'vendor_type', type: 'varchar', length: 50 })
   vendorType: VendorType;
-
+  @Column({
+    name: 'contract_amount',
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+  })
+  contractAmount: number | null;
   @Column({
     name: 'contact_person',
     nullable: true,
@@ -63,9 +69,6 @@ export class Vendor extends SoftDeleteBaseEntity {
   // Relations
   @OneToMany(() => ProjectVendor, (pv) => pv.vendor)
   projectVendors: ProjectVendor[];
-
-  @OneToMany(() => VendorAgreement, (va) => va.vendor)
-  agreements: VendorAgreement[];
 
   @OneToMany(() => Transaction, (t) => t.vendor)
   transactions: Transaction[];
