@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
+import { DocumentsModule } from './modules/documents/documents.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { TransactionsModule } from './modules/transactions/transactions.module';
     UsersModule,
     ProjectsModule,
     TransactionsModule,
+    DocumentsModule,
     // other modules will be added here as we build them
   ],
   controllers: [AppController],

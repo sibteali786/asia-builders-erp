@@ -116,6 +116,7 @@ export class TransactionsService {
     const tx = this.txRepo.create({
       transactionType: dto.transactionType,
       transactionDate: dto.transactionDate,
+      status: dto.status,
       description: dto.description,
       amount: dto.amount,
       paymentMethod: dto.paymentMethod ?? null,

@@ -10,7 +10,11 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
-import { PaymentMethod, TransactionType } from '../entities/transaction.entity';
+import {
+  PaymentMethod,
+  TransactionStatus,
+  TransactionType,
+} from '../entities/transaction.entity';
 
 export class CreateTransactionDto {
   @ApiProperty({
@@ -27,6 +31,13 @@ export class CreateTransactionDto {
   })
   @IsEnum(TransactionType)
   transactionType: TransactionType;
+  @ApiProperty({
+    description: 'Status of the transaction',
+    example: 'PAID',
+    enum: TransactionStatus,
+  })
+  @IsEnum(TransactionStatus)
+  status: TransactionStatus;
 
   @ApiProperty({
     description: 'Date of the transaction in ISO format',

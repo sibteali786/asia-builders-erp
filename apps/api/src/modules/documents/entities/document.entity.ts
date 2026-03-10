@@ -14,7 +14,6 @@ export enum DocumentEntityType {
   VENDOR = 'VENDOR',
   PROJECT = 'PROJECT',
   INVESTMENT = 'INVESTMENT',
-  VENDOR_AGREEMENT = 'VENDOR_AGREEMENT',
 }
 
 @Entity('documents')
