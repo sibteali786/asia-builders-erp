@@ -12,6 +12,10 @@ import { TransactionCategory } from './entities/transaction-category.entity';
 import { User } from '../users/entities/user.entity';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { QueryProjectTransactionsDto } from './dto/query-project-transactions.dto';
+import {
+  Document,
+  DocumentEntityType,
+} from '../documents/entities/document.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -24,6 +28,8 @@ export class TransactionsService {
     private vendorRepo: Repository<Vendor>,
     @InjectRepository(TransactionCategory)
     private categoryRepo: Repository<TransactionCategory>,
+    @InjectRepository(Document)
+    private docRepo: Repository<Document>,
   ) {}
 
   // ─── RECENT (Project Detail sub-tab, last 5) ─────────────────────────────────
@@ -173,6 +179,7 @@ export class TransactionsService {
       where: { id, deletedAt: IsNull() },
     });
     if (!tx) throw new NotFoundException(`Transaction #${id} not found`);
+    await this.softDeleteDocuments(DocumentEntityType.TRANSACTION, id);
     await this.txRepo.softDelete(id);
     return { message: 'Transaction deleted' };
   }
@@ -210,5 +217,20 @@ export class TransactionsService {
       fileCount: t.fileCount ?? 0,
       createdAt: t.createdAt,
     };
+  }
+
+  private async softDeleteDocuments(
+    entityType: DocumentEntityType,
+    entityId: number,
+  ): Promise<void> {
+    await this.docRepo
+      .createQueryBuilder()
+      .update(Document)
+      .set({ deletedAt: new Date() })
+      .where('entity_type = :type AND entity_id = :id AND deleted_at IS NULL', {
+        type: entityType,
+        id: entityId,
+      })
+      .execute();
   }
 }

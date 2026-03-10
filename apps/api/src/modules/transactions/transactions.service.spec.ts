@@ -6,6 +6,7 @@ import { Project } from '../projects/entities/project.entity';
 import { Vendor } from '../vendors/entities/vendor.entity';
 import { TransactionCategory } from './entities/transaction-category.entity';
 import { Repository } from 'typeorm';
+import { Document } from '../documents/entities/document.entity';
 
 describe('TransactionsService', () => {
   let service: TransactionsService;
@@ -28,6 +29,10 @@ describe('TransactionsService', () => {
         },
         {
           provide: getRepositoryToken(TransactionCategory),
+          useClass: Repository,
+        },
+        {
+          provide: getRepositoryToken(Document),
           useClass: Repository,
         },
       ],

@@ -6,6 +6,7 @@ import { Vendor } from '../vendors/entities/vendor.entity';
 import { TransactionsController } from './transactions.controller';
 import { TransactionsService } from './transactions.service';
 import { Transaction } from './entities/transaction.entity';
+import { Document } from '../documents/entities/document.entity';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { Transaction } from './entities/transaction.entity';
       TransactionCategory,
       Project,
       Vendor,
+      Document,
     ]),
   ],
   controllers: [TransactionsController],

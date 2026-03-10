@@ -5,6 +5,7 @@ import { Vendor } from './entities/vendor.entity';
 import { ProjectVendor } from './entities/project-vendor.entity';
 import { Project } from '../projects/entities/project.entity';
 import { Transaction } from '../transactions/entities/transaction.entity';
+import { Document } from '../documents/entities/document.entity';
 
 describe('VendorsService', () => {
   let service: VendorsService;
@@ -27,6 +28,10 @@ describe('VendorsService', () => {
         },
         {
           provide: getRepositoryToken(Transaction),
+          useValue: {},
+        },
+        {
+          provide: getRepositoryToken(Document),
           useValue: {},
         },
       ],

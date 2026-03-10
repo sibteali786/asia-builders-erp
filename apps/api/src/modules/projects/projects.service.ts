@@ -9,12 +9,18 @@ import { QueryProjectsDto } from './dto/query-projects.dto';
 import { IsNull, Repository } from 'typeorm';
 import { User, UserRole } from '../users/entities/user.entity';
 import { CreateProjectDto } from './dto/create-project.dto';
+import {
+  Document,
+  DocumentEntityType,
+} from '../documents/entities/document.entity';
 
 @Injectable()
 export class ProjectsService {
   constructor(
     @InjectRepository(Project)
     private projectRepo: Repository<Project>,
+    @InjectRepository(Document)
+    private docRepo: Repository<Document>,
   ) {}
 
   async findAll(query: QueryProjectsDto) {
@@ -113,7 +119,23 @@ export class ProjectsService {
     });
     if (!project) throw new NotFoundException(`Project #${id} not found`);
 
+    await this.softDeleteDocuments(DocumentEntityType.PROJECT, id);
     await this.projectRepo.softDelete(id);
     return { message: 'Project deleted successfully' };
+  }
+
+  private async softDeleteDocuments(
+    entityType: DocumentEntityType,
+    entityId: number,
+  ): Promise<void> {
+    await this.docRepo
+      .createQueryBuilder()
+      .update(Document)
+      .set({ deletedAt: new Date() })
+      .where('entity_type = :type AND entity_id = :id AND deleted_at IS NULL', {
+        type: entityType,
+        id: entityId,
+      })
+      .execute();
   }
 }

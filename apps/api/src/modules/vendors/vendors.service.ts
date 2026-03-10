@@ -14,6 +14,10 @@ import {
 } from '../transactions/entities/transaction.entity';
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { QueryVendorsDto } from './dto/query-vendors.dto';
+import {
+  Document,
+  DocumentEntityType,
+} from '../documents/entities/document.entity';
 
 @Injectable()
 export class VendorsService {
@@ -26,6 +30,8 @@ export class VendorsService {
     private projectRepo: Repository<Project>,
     @InjectRepository(Transaction)
     private txRepo: Repository<Transaction>,
+    @InjectRepository(Document)
+    private docRepo: Repository<Document>,
   ) {}
 
   // ─── PROJECT VENDORS SUB-TAB ──────────────────────────────────────────────────
@@ -275,6 +281,7 @@ export class VendorsService {
       where: { id, deletedAt: IsNull() },
     });
     if (!vendor) throw new NotFoundException(`Vendor #${id} not found`);
+    await this.softDeleteDocuments(DocumentEntityType.VENDOR, id);
     await this.vendorRepo.softDelete(id);
     return { message: 'Vendor deleted' };
   }
@@ -292,5 +299,20 @@ export class VendorsService {
       where: { id: vendorId, deletedAt: IsNull() },
     });
     if (!exists) throw new NotFoundException(`Vendor #${vendorId} not found`);
+  }
+
+  private async softDeleteDocuments(
+    entityType: DocumentEntityType,
+    entityId: number,
+  ): Promise<void> {
+    await this.docRepo
+      .createQueryBuilder()
+      .update(Document)
+      .set({ deletedAt: new Date() })
+      .where('entity_type = :type AND entity_id = :id AND deleted_at IS NULL', {
+        type: entityType,
+        id: entityId,
+      })
+      .execute();
   }
 }

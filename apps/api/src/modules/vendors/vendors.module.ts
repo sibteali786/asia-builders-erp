@@ -6,10 +6,17 @@ import { Project } from '../projects/entities/project.entity';
 import { Transaction } from '../transactions/entities/transaction.entity';
 import { VendorsService } from './vendors.service';
 import { VendorsController } from './vendors.controller';
+import { Document } from '../documents/entities/document.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Vendor, ProjectVendor, Project, Transaction]),
+    TypeOrmModule.forFeature([
+      Vendor,
+      ProjectVendor,
+      Project,
+      Transaction,
+      Document,
+    ]),
   ],
   controllers: [VendorsController],
   providers: [VendorsService],

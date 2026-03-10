@@ -3,6 +3,7 @@ import { ProjectsService } from './projects.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Project } from './entities/project.entity';
+import { Document } from '../documents/entities/document.entity';
 
 describe('ProjectsService', () => {
   let service: ProjectsService;
@@ -13,6 +14,10 @@ describe('ProjectsService', () => {
         ProjectsService,
         {
           provide: getRepositoryToken(Project),
+          useClass: Repository,
+        },
+        {
+          provide: getRepositoryToken(Document),
           useClass: Repository,
         },
       ],

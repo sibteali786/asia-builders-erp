@@ -4,10 +4,9 @@ import {
   ManyToOne,
   JoinColumn,
   CreateDateColumn,
-  DeleteDateColumn,
-  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
+import { SoftDeleteBaseEntity } from '../../../common/entities/base.entity';
 
 export enum DocumentEntityType {
   TRANSACTION = 'TRANSACTION',
@@ -17,10 +16,7 @@ export enum DocumentEntityType {
 }
 
 @Entity('documents')
-export class Document {
-  @PrimaryGeneratedColumn('increment', { type: 'bigint' })
-  id: number;
-
+export class Document extends SoftDeleteBaseEntity {
   @Column({ name: 'file_name', length: 500 })
   fileName: string;
 
@@ -44,9 +40,6 @@ export class Document {
 
   @CreateDateColumn({ name: 'uploaded_at' })
   uploadedAt: Date;
-
-  @DeleteDateColumn({ name: 'deleted_at', nullable: true })
-  deletedAt: Date | null;
 
   // Relations
   @ManyToOne(() => User)
