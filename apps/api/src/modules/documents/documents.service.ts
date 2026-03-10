@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Repository } from 'typeorm';
@@ -43,7 +44,7 @@ export class DocumentsService {
       relations: ['uploadedBy'],
       order: { uploadedAt: 'DESC' },
     });
-    return docs.map((d) => this.formatDoc(d));
+    return Promise.all(docs.map((d) => this.formatDoc(d)));
   }
 
   // ─── VENDOR DOCUMENTS TAB ─────────────────────────────────────────────────────
@@ -71,7 +72,7 @@ export class DocumentsService {
       order: { uploadedAt: 'DESC' },
     });
 
-    return docs.map((d) => this.formatDoc(d));
+    return Promise.all(docs.map((d) => this.formatDoc(d)));
   }
 
   // ─── UPLOAD ───────────────────────────────────────────────────────────────────
@@ -81,37 +82,46 @@ export class DocumentsService {
     dto: UploadDocumentDto,
     currentUser: User,
   ) {
-    // Validate mime type
     if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
       throw new BadRequestException(
         `File type not allowed. Allowed: PDF, JPG, PNG, WEBP, DOCX`,
       );
     }
-
-    // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       throw new BadRequestException(`File too large. Max size is 10MB`);
     }
 
-    // Upload to storage (placeholder → R2 later)
+    // Step 1: Upload to R2
     const uploaded = await this.storageService.upload(
       file.buffer,
       file.originalname,
       file.mimetype,
     );
 
-    const doc = this.docRepo.create({
-      fileName: file.originalname,
-      filePath: uploaded.filePath,
-      fileSize: uploaded.fileSize,
-      fileType: uploaded.fileType,
-      mimeType: uploaded.mimeType,
-      entityType: dto.entityType,
-      entityId: dto.entityId,
-      uploadedBy: currentUser,
-    });
-
-    return this.docRepo.save(doc);
+    // Step 2: Save to DB — if this fails, rollback R2 upload
+    try {
+      const doc = this.docRepo.create({
+        fileName: file.originalname,
+        filePath: uploaded.filePath,
+        fileSize: uploaded.fileSize,
+        fileType: uploaded.fileType,
+        mimeType: uploaded.mimeType,
+        entityType: dto.entityType,
+        entityId: dto.entityId,
+        uploadedBy: currentUser,
+      });
+      return await this.docRepo.save(doc);
+    } catch (dbErr) {
+      // Compensating action: remove the orphaned file from R2
+      console.error(
+        '[DocumentsService] DB save failed, rolling back R2 upload:',
+        dbErr,
+      );
+      await this.storageService.delete(uploaded.filePath);
+      throw new InternalServerErrorException(
+        'Document save failed, upload has been rolled back',
+      );
+    }
   }
 
   // ─── DELETE (soft delete) ─────────────────────────────────────────────────────
@@ -133,7 +143,7 @@ export class DocumentsService {
   }
 
   // ─── HELPER ───────────────────────────────────────────────────────────────────
-  private formatDoc(d: Document) {
+  private async formatDoc(d: Document) {
     return {
       id: d.id,
       fileName: d.fileName,
@@ -143,6 +153,7 @@ export class DocumentsService {
       entityType: d.entityType,
       entityId: d.entityId,
       uploadedAt: d.uploadedAt,
+      downloadUrl: await this.storageService.getSignedUrl(d.filePath), // 1hr temp link
       uploadedBy: d.uploadedBy
         ? {
             id: d.uploadedBy.id,
