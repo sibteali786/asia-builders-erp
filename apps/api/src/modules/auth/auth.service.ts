@@ -27,7 +27,7 @@ export class AuthService {
 
     // Hash password
     const passwordHash = await this.bcrypt.hash(dto.password, 10);
-
+    console.log('registering user', dto); // Debug log
     // Create user
     const user = this.userRepo.create({
       email: dto.email,
