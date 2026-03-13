@@ -6,6 +6,13 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Allow requests from the Next.js frontend.
+  // In production, replace the origin with your actual domain.
+  app.enableCors({
+    origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
+    credentials: true, // Required if you ever send cookies from frontend
+  });
+
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -13,21 +20,17 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
-  // --- Swagger Setup ---
-  // DocumentBuilder constructs the OpenAPI metadata (title, version, etc.)
+
   const config = new DocumentBuilder()
     .setTitle('Asia Builders ERP API')
     .setDescription('Construction ERP system API documentation')
     .setVersion('1.0')
-    .addBearerAuth() // Adds JWT auth input to the UI
+    .addBearerAuth()
     .build();
-  // SwaggerModule.createDocument scans your entire app for decorators
-  // and builds the OpenAPI JSON spec
-  const document = SwaggerModule.createDocument(app, config);
 
-  // Mounts the interactive UI at /api/docs
+  const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
-  // ---
+
   await app.listen(process.env.API_PORT ?? 3001);
 }
 bootstrap();

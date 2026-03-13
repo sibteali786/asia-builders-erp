@@ -34,7 +34,7 @@
       "prettier --write"
     ],
     "apps/web/**/*.{ts,tsx}": [
-      "eslint --fix",
+      "eslint --fix --config apps/web/eslint.config.mjs",
       "prettier --write"
     ],
     "packages/**/*.ts": [
