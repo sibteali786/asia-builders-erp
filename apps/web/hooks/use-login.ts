@@ -20,7 +20,7 @@ export function useLogin() {
 
     onSuccess: (data) => {
       setAuth(data.user, data.token);
-      router.push("/dashboard");
+      router.push("/");
     },
   });
 }
