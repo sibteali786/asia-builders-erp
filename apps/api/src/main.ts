@@ -9,7 +9,7 @@ async function bootstrap() {
   // Allow requests from the Next.js frontend.
   // In production, replace the origin with your actual domain.
   app.enableCors({
-    origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
+    origin: process.env.FRONTEND_URL ?? 'http://localhost:3001',
     credentials: true, // Required if you ever send cookies from frontend
   });
 
