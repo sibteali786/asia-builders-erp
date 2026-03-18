@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SidebarTrigger } from "../ui/sidebar";
 
 // Maps URL paths to human-readable page titles shown in the TopBar.
 // Extend this as you add more screens.
@@ -33,7 +34,10 @@ export function TopBar() {
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">
       {/* Page title — changes based on current route */}
-      <h1 className="text-base font-semibold text-foreground">{title}</h1>
+      <div className="flex items-center gap-3">
+        <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+        <h1 className="text-base font-semibold text-foreground">{title}</h1>
+      </div>
 
       {/* Right-side actions */}
       <div className="flex items-center gap-2">

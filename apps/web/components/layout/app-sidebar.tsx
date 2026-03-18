@@ -67,11 +67,11 @@ export function AppSidebar() {
     // Sidebar is a fixed-width panel provided by shadcn.
     // `collapsible="icon"` means it can collapse to just icons (optional).
     <Sidebar
-      collapsible="none"
+      collapsible="icon"
       className="border-r border-border bg-background"
     >
       {/* ── Logo ── */}
-      <SidebarHeader className="px-6 py-5">
+      <SidebarHeader className="px-4 py-5">
         <Link href="/">
           <Image
             src="/logo.svg"
@@ -79,6 +79,7 @@ export function AppSidebar() {
             width={140}
             height={36}
             priority
+            className="group-data-[collapsible=icon]:hidden" // hides when collapsed
           />
         </Link>
       </SidebarHeader>
@@ -142,15 +143,15 @@ export function AppSidebar() {
             */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <SidebarMenuButton className="h-auto px-3 py-2 gap-3 rounded-md hover:bg-accent">
+                <SidebarMenuButton className="h-auto px-3 py-2 gap-3 rounded-md hover:bg-accent group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
                   {/* Avatar circle with initials */}
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C9A84C] text-white text-xs font-semibold">
                     {user?.firstName?.[0]?.toUpperCase() ?? "?"}
                     {user?.lastName?.[0]?.toUpperCase() ?? ""}
                   </div>
 
-                  {/* Name + email */}
-                  <div className="flex flex-col text-left overflow-hidden">
+                  {/* Name + email — hidden when collapsed */}
+                  <div className="flex flex-col text-left overflow-hidden group-data-[collapsible=icon]:hidden">
                     <span className="truncate text-sm font-medium text-foreground">
                       {user?.firstName} {user?.lastName}
                     </span>
@@ -159,9 +160,9 @@ export function AppSidebar() {
                     </span>
                   </div>
 
-                  {/* Chevron indicator */}
+                  {/* Chevron — hidden when collapsed */}
                   <ChevronUp
-                    className="ml-auto shrink-0 text-muted-foreground"
+                    className="ml-auto shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden"
                     size={14}
                   />
                 </SidebarMenuButton>

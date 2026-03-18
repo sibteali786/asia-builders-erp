@@ -5,9 +5,12 @@ import {
   IsDateString,
   IsEnum,
   MaxLength,
+  IsNumber,
+  Min,
 } from 'class-validator';
 import { ProjectStatus } from '../entities/project.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export class CreateProjectDto {
   @ApiProperty({
@@ -56,4 +59,10 @@ export class CreateProjectDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @Type(() => Number) // transforms the incoming string to a number before validation
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  salePrice?: number;
 }

@@ -51,6 +51,10 @@ export class ProjectsService {
       });
     }
 
+    if (query.status) {
+      qb.andWhere('p.status = :status', { status: query.status });
+    }
+
     qb.orderBy('p.created_at', 'DESC');
 
     return qb.getRawMany();
