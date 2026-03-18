@@ -24,16 +24,16 @@ apiClient.interceptors.request.use((config) => {
 // Runs AFTER every response comes back.
 // On 401 (token expired or invalid): clears auth state + redirects to login.
 apiClient.interceptors.response.use(
-  (response) => response, // Pass through successful responses untouched
-
+  (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      useAuthStore.getState().clearAuth();
-      // Hard redirect — clears all React state cleanly
-      window.location.href = "/login";
+      const token = useAuthStore.getState().token;
+      // Only redirect if user WAS logged in — not on a failed login attempt
+      if (token) {
+        useAuthStore.getState().clearAuth();
+        window.location.href = "/login";
+      }
     }
-
-    // Re-throw so React Query can catch it and surface the error
     return Promise.reject(error);
   },
 );
