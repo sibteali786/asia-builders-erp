@@ -7,6 +7,7 @@ import {
   useCreateTransaction,
   useVendorOptions,
   useCategoryOptions,
+  useProjectOptions,
 } from "@/hooks/use-transactions";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +47,8 @@ export function TransactionModal({ open, onOpenChange, projectId }: Props) {
   const create = useCreateTransaction(projectId);
   const { data: vendors = [] } = useVendorOptions();
   const { data: categories = [] } = useCategoryOptions();
+  const { data: projects = [] } = useProjectOptions();
+  const [selectedProjectId, setSelectedProjectId] = useState(projectId || 0);
 
   function set(field: keyof typeof form, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -55,14 +58,13 @@ export function TransactionModal({ open, onOpenChange, projectId }: Props) {
     e.preventDefault();
     create.mutate(
       {
-        projectId,
         transactionType: form.type,
         transactionDate: form.date,
         amount: Number(form.amount),
         description: form.description,
         status: form.status,
+        projectId: selectedProjectId,
         ...(form.vendorId && { vendorId: Number(form.vendorId) }),
-        ...(form.categoryId && { categoryId: Number(form.categoryId) }),
         ...(form.paymentMethod && { paymentMethod: form.paymentMethod }),
         ...(form.chequeNumber && { chequeNumber: form.chequeNumber }),
         ...(form.physicalFileReference && {
@@ -86,11 +88,6 @@ export function TransactionModal({ open, onOpenChange, projectId }: Props) {
     "w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none focus:border-[#C9A84C] focus:ring-2 focus:ring-[#C9A84C]/20 transition placeholder:text-muted-foreground";
   const lbl =
     "block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5";
-
-  // Filter categories by selected type
-  const filteredCategories = categories.filter(
-    (c) => c.categoryType === form.type,
-  );
 
   return (
     <Dialog
@@ -119,7 +116,7 @@ export function TransactionModal({ open, onOpenChange, projectId }: Props) {
                 className={`flex-1 py-2.5 text-sm font-medium transition-colors
                   ${
                     form.type === t
-                      ? "bg-[#C9A84C]/10 text-[#C9A84C] border-[#C9A84C] border"
+                      ? "bg-[#C9A84C]/10 text-[#C9A84C] border-[#C9A84C] border-2 rounded-lg"
                       : "text-muted-foreground hover:bg-accent"
                   }`}
               >
@@ -130,21 +127,24 @@ export function TransactionModal({ open, onOpenChange, projectId }: Props) {
 
           {/* Project + Date */}
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={lbl}>Category</label>
-              <select
-                className={inp}
-                value={form.categoryId}
-                onChange={(e) => set("categoryId", e.target.value)}
-              >
-                <option value="">Select Category</option>
-                {filteredCategories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {projectId === 0 && (
+              <div>
+                <label className={lbl}>Project *</label>
+                <select
+                  className={inp}
+                  value={selectedProjectId}
+                  onChange={(e) => setSelectedProjectId(Number(e.target.value))}
+                  required
+                >
+                  <option value={0}>Select Project</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div>
               <label className={lbl}>Date *</label>
               <input
@@ -193,7 +193,23 @@ export function TransactionModal({ open, onOpenChange, projectId }: Props) {
               </select>
             </div>
           </div>
-
+          <div className="flex rounded-lg border border-input overflow-hidden">
+            {(["PAID", "DUE"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => set("status", t)}
+                className={`flex-1 py-2.5 text-sm font-medium transition-colors
+                  ${
+                    form.status === t
+                      ? "bg-[#C9A84C]/10 text-[#008235] border-[#008235] border-2 rounded-lg"
+                      : "text-muted-foreground hover:bg-accent"
+                  }`}
+              >
+                {t === "PAID" ? "Paid" : "Due"}
+              </button>
+            ))}
+          </div>
           {/* Description */}
           <div>
             <label className={lbl}>Description *</label>
@@ -244,23 +260,6 @@ export function TransactionModal({ open, onOpenChange, projectId }: Props) {
               value={form.physicalFileReference}
               onChange={(e) => set("physicalFileReference", e.target.value)}
             />
-          </div>
-
-          {/* Status */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={lbl}>Status</label>
-              <select
-                className={inp}
-                value={form.status}
-                onChange={(e) =>
-                  set("status", e.target.value as "PAID" | "DUE")
-                }
-              >
-                <option value="PAID">Paid</option>
-                <option value="DUE">Due</option>
-              </select>
-            </div>
           </div>
 
           {/* Upload area — placeholder (wired to documents API separately) */}

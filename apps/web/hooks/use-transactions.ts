@@ -3,6 +3,18 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/lib/axios";
 
+export interface GlobalTransaction extends Transaction {
+  project: { id: number; name: string };
+  balance: number;
+  status: "PAID" | "DUE";
+}
+
+export interface GlobalTransactionResponse {
+  data: GlobalTransaction[];
+  meta: TransactionMeta;
+  totals: { totalDebits: number; totalCredits: number; netFlow: number };
+}
+
 export interface Transaction {
   id: number;
   transactionType: "INCOME" | "EXPENSE";
@@ -106,7 +118,7 @@ export function useVendorOptions() {
     queryKey: ["vendors", "all-options"],
     queryFn: async () => {
       const res = await apiClient.get<{ data: { id: number; name: string }[] }>(
-        "/vendors/vendors",
+        "/vendors",
       );
       return res.data.data;
     },
@@ -121,6 +133,42 @@ export function useCategoryOptions() {
       const res = await apiClient.get<
         { id: number; name: string; categoryType: string }[]
       >("/transactions/categories");
+      return res.data;
+    },
+  });
+}
+
+// Fetch global transactions with optional filters (for main transactions page)
+
+export function useGlobalTransactions(
+  params: { page?: number; search?: string; type?: string } = {},
+) {
+  return useQuery({
+    queryKey: ["transactions", "global", params],
+    queryFn: async () => {
+      const res = await apiClient.get<GlobalTransactionResponse>(
+        "/transactions",
+        {
+          params: {
+            ...(params.search && { search: params.search }),
+            ...(params.type && { type: params.type }),
+            page: params.page ?? 1,
+            limit: 15,
+          },
+        },
+      );
+      return res.data;
+    },
+  });
+}
+
+// In use-transactions.ts — add project options fetcher
+export function useProjectOptions() {
+  return useQuery({
+    queryKey: ["projects", "options"],
+    queryFn: async () => {
+      const res =
+        await apiClient.get<{ id: number; name: string }[]>("/projects");
       return res.data;
     },
   });

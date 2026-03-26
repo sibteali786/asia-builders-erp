@@ -20,7 +20,7 @@ export function useProjectVendors(projectId: number) {
     queryKey: ["vendors", "project", projectId],
     queryFn: async () => {
       const res = await apiClient.get<ProjectVendor[]>(
-        `/vendors/projects/${projectId}/vendors`,
+        `vendors/projects/${projectId}/vendors`,
       );
       return res.data;
     },

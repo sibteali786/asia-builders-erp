@@ -17,6 +17,23 @@ import {
   DocumentEntityType,
 } from '../documents/entities/document.entity';
 
+// Replace TransactionWithCount with this
+interface RawTransactionRow {
+  id: string;
+  transactionType: TransactionType;
+  transactionDate: Date;
+  description: string;
+  amount: string;
+  status: string;
+  paymentMethod: string | null;
+  physicalFileReference: string | null;
+  fileCount: string;
+  createdAt: Date;
+  vendorId: string | null;
+  vendorName: string | null;
+  projectId: string;
+  projectName: string;
+}
 @Injectable()
 export class TransactionsService {
   constructor(
@@ -31,6 +48,118 @@ export class TransactionsService {
     @InjectRepository(Document)
     private docRepo: Repository<Document>,
   ) {}
+
+  async findAll(query: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    type?: string;
+    projectId?: number;
+  }) {
+    const { page = 1, limit = 15, search, type, projectId } = query;
+    const skip = (page - 1) * limit;
+
+    const qb = this.txRepo
+      .createQueryBuilder('t')
+      .leftJoin('t.vendor', 'vendor')
+      .leftJoin('t.project', 'project')
+      .select([
+        't.id                                    AS id',
+        't.transaction_type                      AS "transactionType"',
+        't.transaction_date                      AS "transactionDate"',
+        't.description                           AS description',
+        't.amount                                AS amount',
+        't.status                                AS status',
+        't.payment_method                        AS "paymentMethod"',
+        't.physical_file_reference               AS "physicalFileReference"',
+        't.created_at                            AS "createdAt"',
+        'vendor.id                               AS "vendorId"',
+        'vendor.name                             AS "vendorName"',
+        'project.id                              AS "projectId"',
+        'project.name                            AS "projectName"',
+        `(SELECT COUNT(*) FROM documents d
+        WHERE d.entity_type = 'TRANSACTION'
+        AND d.entity_id = t.id
+        AND d.deleted_at IS NULL)              AS "fileCount"`,
+      ])
+      .where('t.deleted_at IS NULL')
+      .orderBy('t.transaction_date', 'DESC')
+      .addOrderBy('t.created_at', 'DESC')
+      .offset(skip)
+      .limit(limit);
+
+    if (type) qb.andWhere('t.transaction_type = :type', { type });
+    if (projectId) qb.andWhere('t.project_id = :projectId', { projectId });
+    if (search) {
+      qb.andWhere(
+        '(t.description ILIKE :q OR vendor.name ILIKE :q OR project.name ILIKE :q)',
+        { q: `%${search}%` },
+      );
+    }
+    const countQb = this.txRepo
+      .createQueryBuilder('t')
+      .leftJoin('t.vendor', 'vendor')
+      .leftJoin('t.project', 'project')
+      .select('COUNT(*) AS cnt')
+      .where('t.deleted_at IS NULL');
+
+    if (type) countQb.andWhere('t.transaction_type = :type', { type });
+    if (projectId) countQb.andWhere('t.project_id = :projectId', { projectId });
+    if (search) {
+      countQb.andWhere(
+        '(t.description ILIKE :q OR vendor.name ILIKE :q OR project.name ILIKE :q)',
+        { q: `%${search}%` },
+      );
+    }
+
+    const [rows, countResult] = await Promise.all([
+      qb.getRawMany<RawTransactionRow>(),
+      countQb.getRawOne<{ cnt: string }>(),
+    ]);
+
+    const total = Number(countResult?.cnt ?? 0);
+
+    let balance = 0;
+    const data = rows.map((r) => {
+      const amount =
+        r.transactionType === TransactionType.EXPENSE
+          ? -Math.abs(Number(r.amount))
+          : Math.abs(Number(r.amount));
+      balance += amount;
+      return {
+        id: Number(r.id),
+        transactionType: r.transactionType,
+        transactionDate: r.transactionDate,
+        description: r.description,
+        amount,
+        status: r.status,
+        paymentMethod: r.paymentMethod,
+        physicalFileReference: r.physicalFileReference,
+        fileCount: Number(r.fileCount ?? 0),
+        createdAt: r.createdAt,
+        vendor: r.vendorId
+          ? { id: Number(r.vendorId), name: r.vendorName }
+          : null,
+        project: { id: Number(r.projectId), name: r.projectName },
+        balance,
+      };
+    });
+
+    const totals = data.reduce(
+      (acc, t) => {
+        if (t.amount < 0) acc.totalDebits += Math.abs(t.amount);
+        else acc.totalCredits += t.amount;
+        return acc;
+      },
+      { totalDebits: 0, totalCredits: 0 },
+    );
+
+    return {
+      data,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+      totals: { ...totals, netFlow: totals.totalCredits - totals.totalDebits },
+    };
+  }
 
   // ─── RECENT (Project Detail sub-tab, last 5) ─────────────────────────────────
   async findRecentByProject(projectId: number) {

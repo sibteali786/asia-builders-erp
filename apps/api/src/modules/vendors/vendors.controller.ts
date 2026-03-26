@@ -19,32 +19,26 @@ import { QueryVendorsDto } from './dto/query-vendors.dto';
 @Controller('vendors')
 export class VendorsController {
   constructor(private readonly vendorsService: VendorsService) {}
+
   // GET /projects/:projectId/vendors  → project vendors sub-tab
   @Get('projects/:projectId/vendors')
   findByProject(@Param('projectId', ParseIntPipe) projectId: number) {
     return this.vendorsService.findByProject(projectId);
   }
-
-  // GET /vendors  → global vendor list
-  @Get('vendors')
-  findAll(@Query() query: QueryVendorsDto) {
-    return this.vendorsService.findAll(query);
-  }
-
-  // GET /vendors/:id  → vendor detail header
-  @Get('vendors/:id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.vendorsService.findOne(id);
-  }
-
   // GET /vendors/:id/transactions?page=1&limit=15  → payment history tab
-  @Get('vendors/:id/transactions')
+  @Get(':id/transactions')
   findTransactions(
     @Param('id', ParseIntPipe) id: number,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 15,
   ) {
     return this.vendorsService.findTransactions(id, page, limit);
+  }
+
+  // GET /vendors/:id  → vendor detail header
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.vendorsService.findOne(id);
   }
 
   // POST /projects/:projectId/vendors/:vendorId  → link existing vendor to project
@@ -57,13 +51,13 @@ export class VendorsController {
   }
 
   // POST /vendors  → create vendor (+ optional project link)
-  @Post('vendors')
+  @Post()
   create(@Body() dto: CreateVendorDto) {
     return this.vendorsService.create(dto);
   }
 
   // PATCH /vendors/:id  → edit vendor profile
-  @Patch('vendors/:id')
+  @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: Partial<CreateVendorDto>,
@@ -72,8 +66,14 @@ export class VendorsController {
   }
 
   // DELETE /vendors/:id
-  @Delete('vendors/:id')
+  @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.vendorsService.remove(id);
+  }
+
+  // GET /vendors  → global vendor list
+  @Get()
+  findAll(@Query() query: QueryVendorsDto) {
+    return this.vendorsService.findAll(query);
   }
 }

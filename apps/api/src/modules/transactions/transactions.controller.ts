@@ -24,6 +24,12 @@ import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 export class TransactionsController {
   constructor(private readonly txService: TransactionsService) {}
 
+  // GET /transactions?page=1&type=EXPENSE&search=cement
+  @Get('transactions')
+  findAllGlobal(@Query() query: QueryProjectTransactionsDto) {
+    return this.txService.findAll(query);
+  }
+
   // GET /projects/:projectId/transactions  → recent 5 for sub-tab
   @ApiOperation({ summary: 'Get recent transactions for a project' })
   @ApiResponse({

@@ -43,4 +43,13 @@ export class QueryProjectTransactionsDto {
   @IsInt()
   @Min(1)
   limit?: number = 10;
+  @ApiProperty({
+    required: false,
+    description: 'Project ID to filter transactions',
+    example: 123,
+  })
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt()
+  projectId?: number;
 }
