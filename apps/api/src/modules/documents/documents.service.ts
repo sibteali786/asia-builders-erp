@@ -162,4 +162,54 @@ export class DocumentsService {
         : null,
     };
   }
+
+  async findAllByProject(projectId: number) {
+    // Fetch project-level docs and transaction docs in parallel
+    const [projectDocs, transactions] = await Promise.all([
+      this.docRepo.find({
+        where: {
+          entityType: DocumentEntityType.PROJECT,
+          entityId: projectId,
+          deletedAt: IsNull(),
+        },
+        relations: ['uploadedBy'],
+        order: { uploadedAt: 'DESC' },
+      }),
+      this.txRepo.find({
+        where: { project: { id: projectId }, deletedAt: IsNull() },
+        select: ['id', 'description'],
+      }),
+    ]);
+    const txIds = transactions.map((t) => t.id);
+
+    const txDocs = txIds.length
+      ? await this.docRepo.find({
+          where: {
+            entityType: DocumentEntityType.TRANSACTION,
+            entityId: In(txIds),
+            deletedAt: IsNull(),
+          },
+          relations: ['uploadedBy'],
+          order: { uploadedAt: 'DESC' },
+        })
+      : [];
+
+    // Build a lookup map: txId → description for labeling
+    const txMap = new Map(transactions.map((t) => [t.id, t.description]));
+
+    const [formattedProject, formattedTx] = await Promise.all([
+      Promise.all(projectDocs.map((d) => this.formatDoc(d))),
+      Promise.all(
+        txDocs.map(async (d) => ({
+          ...(await this.formatDoc(d)),
+          sourceLabel: txMap.get(d.entityId) ?? 'Transaction',
+        })),
+      ),
+    ]);
+
+    return {
+      projectDocuments: formattedProject,
+      transactionDocuments: formattedTx,
+    };
+  }
 }

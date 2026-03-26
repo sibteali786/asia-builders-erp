@@ -98,4 +98,17 @@ export class DocumentsController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.documentsService.remove(id);
   }
+
+  // GET /projects/:projectId/documents/all
+  @ApiOperation({
+    summary: 'Get all documents for a project including transaction documents',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Project and transaction documents',
+  })
+  @Get('projects/:projectId/documents/all')
+  findAllByProject(@Param('projectId', ParseIntPipe) projectId: number) {
+    return this.documentsService.findAllByProject(projectId);
+  }
 }

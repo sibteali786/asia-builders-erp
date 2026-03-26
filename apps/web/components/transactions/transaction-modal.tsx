@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { DollarSign, CloudUpload } from "lucide-react";
+import { DollarSign, CloudUpload, FileText, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   useCreateTransaction,
   useVendorOptions,
-  useCategoryOptions,
   useProjectOptions,
+  useUploadTransactionDocument,
 } from "@/hooks/use-transactions";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,12 +46,21 @@ export function TransactionModal({ open, onOpenChange, projectId }: Props) {
   const [form, setForm] = useState(EMPTY);
   const create = useCreateTransaction(projectId);
   const { data: vendors = [] } = useVendorOptions();
-  const { data: categories = [] } = useCategoryOptions();
   const { data: projects = [] } = useProjectOptions();
   const [selectedProjectId, setSelectedProjectId] = useState(projectId || 0);
+  const uploadDoc = useUploadTransactionDocument();
+  const [files, setFiles] = useState<File[]>([]);
 
   function set(field: keyof typeof form, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(e.target.files ?? []);
+    setFiles((prev) => [...prev, ...selected]);
+  }
+
+  function removeFile(i: number) {
+    setFiles((prev) => prev.filter((_, idx) => idx !== i));
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -72,7 +81,15 @@ export function TransactionModal({ open, onOpenChange, projectId }: Props) {
         }),
       },
       {
-        onSuccess: () => {
+        onSuccess: async (data) => {
+          // Upload any attached files sequentially
+          if (files.length > 0) {
+            await Promise.all(
+              files.map((file) =>
+                uploadDoc.mutateAsync({ file, entityId: data.id }),
+              ),
+            );
+          }
           toast.success("Transaction saved");
           onOpenChange(false);
           setForm(EMPTY);
@@ -262,15 +279,57 @@ export function TransactionModal({ open, onOpenChange, projectId }: Props) {
             />
           </div>
 
-          {/* Upload area — placeholder (wired to documents API separately) */}
-          <div className="rounded-lg border border-dashed border-[#C9A84C]/50 bg-[#C9A84C]/5 p-6 text-center">
-            <CloudUpload size={24} className="mx-auto text-[#C9A84C] mb-2" />
-            <p className="text-sm text-muted-foreground">
-              Click to upload or drag and drop
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              PDF, JPG or PNG (max. 10MB)
-            </p>
+          {/* File upload area */}
+          <div>
+            <label
+              htmlFor="tx-file-upload"
+              className="rounded-lg border border-dashed border-[#C9A84C]/50 bg-[#C9A84C]/5 p-5 text-center flex flex-col items-center gap-1.5 cursor-pointer hover:bg-[#C9A84C]/10 transition-colors"
+            >
+              <CloudUpload size={22} className="text-[#C9A84C]" />
+              <p className="text-sm text-muted-foreground">
+                Click to upload or drag and drop
+              </p>
+              <p className="text-xs text-muted-foreground">
+                PDF, JPG or PNG (max. 10MB)
+              </p>
+              <input
+                id="tx-file-upload"
+                type="file"
+                multiple
+                accept=".pdf,.jpg,.jpeg,.png,.webp,.docx"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+            </label>
+
+            {/* Selected files list */}
+            {files.length > 0 && (
+              <div className="mt-2 space-y-1.5">
+                {files.map((f, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText size={13} className="text-amber-600 shrink-0" />
+                      <span className="text-xs text-foreground truncate">
+                        {f.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {(f.size / 1024).toFixed(0)} KB
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(i)}
+                      className="text-muted-foreground hover:text-destructive ml-2 shrink-0"
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2 pt-1">

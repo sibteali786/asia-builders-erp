@@ -173,3 +173,63 @@ export function useProjectOptions() {
     },
   });
 }
+
+// ── Upload document for a transaction ────────────────────────────────────────
+export function useUploadTransactionDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      file,
+      entityId,
+    }: {
+      file: File;
+      entityId: number;
+    }) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("entityType", "TRANSACTION");
+      formData.append("entityId", String(entityId));
+      const res = await apiClient.post("/documents/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+    },
+  });
+}
+
+// ── Generic document upload (reusable for any entity type) ───────────────────
+export function useUploadDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      file,
+      entityType,
+      entityId,
+    }: {
+      file: File;
+      entityType: "PROJECT" | "TRANSACTION" | "VENDOR" | "INVESTMENT";
+      entityId: number;
+    }) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("entityType", entityType);
+      formData.append("entityId", String(entityId));
+      const res = await apiClient.post("/documents/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return res.data;
+    },
+    onSuccess: (_, vars) => {
+      // Invalidate the relevant document queries
+      qc.invalidateQueries({ queryKey: ["documents"] });
+      if (vars.entityType === "PROJECT") {
+        qc.invalidateQueries({
+          queryKey: ["documents", "project-all", vars.entityId],
+        });
+      }
+    },
+  });
+}
