@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Plus, MoreVertical, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -193,6 +192,9 @@ export function DocumentsTab({ projectId }: { projectId: number }) {
         count={txDocs.length}
         docs={txDocs}
       />
+      <p className="text-sm font-medium text-gray-500">
+        {totalCount} documents in total
+      </p>
     </div>
   );
 }
