@@ -53,7 +53,7 @@ export default function ProjectDetailPage({
       */}
       <Tabs defaultValue="transactions">
         <TabsList
-          className="bg-transparent w-full justify-start rounded-none p-0 h-auto gap-6"
+          className="bg-transparent justify-start rounded-none p-0 h-auto gap-6"
           variant="line"
         >
           {["transactions", "vendors", "documents"].map((tab) => (
@@ -61,9 +61,9 @@ export default function ProjectDetailPage({
               key={tab}
               value={tab}
               className="rounded-none border-0 pb-3 px-0 capitalize text-sm font-medium text-muted-foreground
-                data-[state=active]:text-[#C9A84C] data-[state=active]:border-b-2
+                data-[state=active]:text-[#C9A84C]
                 data-[state=active]:border-[#C9A84C] data-[state=active]:shadow-none
-                data-[state=active]:bg-transparent"
+                data-[state=active]:bg-transparent after:!bg-[#C9A84C]"
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
             </TabsTrigger>
