@@ -187,38 +187,82 @@ export class TransactionsService {
 
     const qb = this.txRepo
       .createQueryBuilder('t')
-      .leftJoinAndSelect('t.vendor', 'vendor')
-      .leftJoinAndSelect('t.category', 'category')
-      // count documents attached to this transaction
-      .loadRelationCountAndMap('t.fileCount', 't.documents')
+      .leftJoin('t.vendor', 'vendor')
+      .leftJoin('t.category', 'category')
+      .select([
+        't.id                                AS id',
+        't.transaction_type                  AS "transactionType"',
+        't.transaction_date                  AS "transactionDate"',
+        't.description                       AS description',
+        't.amount                            AS amount',
+        't.status                            AS status',
+        't.payment_method                    AS "paymentMethod"',
+        't.physical_file_reference           AS "physicalFileReference"',
+        't.created_at                        AS "createdAt"',
+        'vendor.id                           AS "vendorId"',
+        'vendor.name                         AS "vendorName"',
+        `(SELECT COUNT(*) FROM documents d
+        WHERE d.entity_type = 'TRANSACTION'
+        AND d.entity_id = t.id
+        AND d.deleted_at IS NULL)          AS "fileCount"`,
+      ])
       .where('t.project_id = :projectId AND t.deleted_at IS NULL', {
         projectId,
       })
       .orderBy('t.transaction_date', 'DESC')
       .addOrderBy('t.created_at', 'DESC')
-      .skip(skip)
-      .take(limit);
+      .offset(skip)
+      .limit(limit);
 
-    if (type) {
-      qb.andWhere('t.transaction_type = :type', { type });
-    }
-
+    if (type) qb.andWhere('t.transaction_type = :type', { type });
     if (search) {
       qb.andWhere('(t.description ILIKE :q OR vendor.name ILIKE :q)', {
         q: `%${search}%`,
       });
     }
 
-    const [rows, total] = await qb.getManyAndCount();
+    const countQb = this.txRepo
+      .createQueryBuilder('t')
+      .leftJoin('t.vendor', 'vendor')
+      .select('COUNT(*) AS cnt')
+      .where('t.project_id = :projectId AND t.deleted_at IS NULL', {
+        projectId,
+      });
+
+    if (type) countQb.andWhere('t.transaction_type = :type', { type });
+    if (search) {
+      countQb.andWhere('(t.description ILIKE :q OR vendor.name ILIKE :q)', {
+        q: `%${search}%`,
+      });
+    }
+
+    const [rows, countResult] = await Promise.all([
+      qb.getRawMany<RawTransactionRow>(),
+      countQb.getRawOne<{ cnt: string }>(),
+    ]);
+
+    const total = Number(countResult?.cnt ?? 0);
 
     return {
-      data: rows.map((t) => this.formatRow(t)),
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
+      data: rows.map((r) => ({
+        id: Number(r.id),
+        transactionType: r.transactionType,
+        transactionDate: r.transactionDate,
+        description: r.description,
+        amount:
+          r.transactionType === TransactionType.EXPENSE
+            ? -Math.abs(Number(r.amount))
+            : Math.abs(Number(r.amount)),
+        status: r.status,
+        paymentMethod: r.paymentMethod,
+        physicalFileReference: r.physicalFileReference,
+        fileCount: Number(r.fileCount ?? 0),
+        createdAt: r.createdAt,
+        vendor: r.vendorId
+          ? { id: Number(r.vendorId), name: r.vendorName }
+          : null,
+      })),
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
 
