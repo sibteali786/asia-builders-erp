@@ -236,3 +236,35 @@ export function useUploadDocument() {
     },
   });
 }
+
+// ── Delete transaction ────────────────────────────────────────────────────────
+export function useDeleteTransaction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await apiClient.delete(`/transactions/${id}`);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["transactions"], exact: false });
+    },
+  });
+}
+
+export function useUpdateTransaction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      payload,
+    }: {
+      id: number;
+      payload: Partial<CreateTransactionPayload>;
+    }) => {
+      const res = await apiClient.patch(`/transactions/${id}`, payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["transactions"], exact: false });
+    },
+  });
+}

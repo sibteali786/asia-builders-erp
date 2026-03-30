@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   X,
   Calendar,
@@ -9,8 +10,22 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { TransactionModal } from "./transaction-modal";
+import { useDeleteTransaction } from "@/hooks/use-transactions";
 import type { GlobalTransaction } from "@/hooks/use-transactions";
+import { useAuthStore } from "@/store/auth.store";
 
 interface Props {
   transaction: GlobalTransaction | null;
@@ -25,11 +40,9 @@ function formatDate(d: string) {
     year: "numeric",
   });
 }
-
 function formatMoney(v: number) {
   return Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2 });
 }
-
 const PAYMENT_LABELS: Record<string, string> = {
   CASH: "Cash",
   CHEQUE: "Cheque",
@@ -37,8 +50,23 @@ const PAYMENT_LABELS: Record<string, string> = {
 };
 
 export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
-  // Drawer slides in from right using CSS transform — no extra library needed
-  // Sheet from shadcn would also work, but this keeps it lightweight
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const deleteTransaction = useDeleteTransaction();
+  const { user } = useAuthStore();
+  const isOwner = user?.role === "OWNER";
+
+  function handleDelete() {
+    if (!tx) return;
+    deleteTransaction.mutate(tx.id, {
+      onSuccess: () => {
+        toast.success("Transaction deleted");
+        setDeleteOpen(false);
+        onClose();
+      },
+      onError: () => toast.error("Failed to delete transaction"),
+    });
+  }
 
   return (
     <>
@@ -50,8 +78,8 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
       {/* Drawer panel */}
       <div
         className={`fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-50
-          transform transition-transform duration-300 ease-in-out flex flex-col
-          ${open ? "translate-x-0" : "translate-x-full"}`}
+        transform transition-transform duration-300 ease-in-out flex flex-col
+        ${open ? "translate-x-0" : "translate-x-full"}`}
       >
         {tx && (
           <>
@@ -60,11 +88,7 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
               <div>
                 <span
                   className={`text-xs font-bold px-2.5 py-1 rounded-full
-                  ${
-                    tx.transactionType === "EXPENSE"
-                      ? "bg-red-100 text-red-600"
-                      : "bg-green-100 text-green-700"
-                  }`}
+                  ${tx.transactionType === "EXPENSE" ? "bg-red-100 text-red-600" : "bg-green-100 text-green-700"}`}
                 >
                   {tx.transactionType}
                 </span>
@@ -85,7 +109,6 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* Description */}
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
                   Description
@@ -100,7 +123,6 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
                 )}
               </div>
 
-              {/* Date + Reference */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-start gap-2">
                   <Calendar
@@ -116,7 +138,6 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
                     </p>
                   </div>
                 </div>
-
                 {tx.physicalFileReference && (
                   <div className="flex items-start gap-2">
                     <Hash
@@ -135,7 +156,6 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
                 )}
               </div>
 
-              {/* Payment method */}
               {tx.paymentMethod && (
                 <div className="flex items-start gap-2">
                   <CreditCard
@@ -153,7 +173,6 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
                 </div>
               )}
 
-              {/* Project */}
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-0.5">
                   Project
@@ -163,7 +182,6 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
                 </span>
               </div>
 
-              {/* Attachments — placeholder (fileCount only, real URLs need separate fetch) */}
               {tx.fileCount > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-3">
@@ -198,18 +216,81 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
               )}
             </div>
 
-            {/* Footer actions */}
+            {/* Footer */}
             <div className="p-6 border-t border-border flex gap-3">
-              <Button variant="outline" className="flex-1 gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 gap-2"
+                onClick={() => setEditOpen(true)}
+              >
                 <Pencil size={14} /> Edit
               </Button>
-              <Button className="flex-1 gap-2 bg-red-500 hover:bg-red-600 text-white">
+              <Button
+                className="flex-1 gap-2 bg-red-500 hover:bg-red-600 text-white"
+                onClick={() => setDeleteOpen(true)}
+              >
                 <Trash2 size={14} /> Delete
               </Button>
             </div>
           </>
         )}
       </div>
+
+      {/* Edit modal */}
+      {tx && (
+        <TransactionModal
+          key={tx.id}
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          projectId={tx.project.id}
+          transaction={tx}
+        />
+      )}
+
+      {/* Delete confirmation — behavior differs by role */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isOwner ? "Delete Transaction" : "Permission Required"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isOwner ? (
+                <>
+                  Are you sure you want to delete{" "}
+                  <span className="font-medium text-foreground">
+                    &ldquo;{tx?.description}&rdquo;
+                  </span>
+                  ? This action cannot be undone.
+                </>
+              ) : (
+                <>
+                  Only{" "}
+                  <span className="font-medium text-foreground">
+                    Admins (Owners)
+                  </span>{" "}
+                  can delete transactions. Please contact your administrator to
+                  remove this record.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              {isOwner ? "Cancel" : "Close"}
+            </AlertDialogCancel>
+            {isOwner && (
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={deleteTransaction.isPending}
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
+                {deleteTransaction.isPending ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

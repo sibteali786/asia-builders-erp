@@ -8,6 +8,8 @@ import {
   useVendorOptions,
   useProjectOptions,
   useUploadTransactionDocument,
+  GlobalTransaction,
+  useUpdateTransaction,
 } from "@/hooks/use-transactions";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +23,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: number;
+  transaction?: GlobalTransaction | null;
 }
 
 const PAYMENT_METHODS = [
@@ -42,8 +45,27 @@ const EMPTY = {
   status: "PAID" as "PAID" | "DUE",
 };
 
-export function TransactionModal({ open, onOpenChange, projectId }: Props) {
-  const [form, setForm] = useState(EMPTY);
+export function TransactionModal({
+  open,
+  onOpenChange,
+  projectId,
+  transaction,
+}: Props) {
+  const isEdit = !!transaction;
+  const [form, setForm] = useState({
+    type: transaction?.transactionType ?? ("EXPENSE" as "EXPENSE" | "INCOME"),
+    date: transaction?.transactionDate
+      ? String(transaction.transactionDate).slice(0, 10)
+      : "",
+    amount: transaction ? String(Math.abs(transaction.amount)) : "",
+    vendorId: transaction?.vendor ? String(transaction.vendor.id) : "",
+    categoryId: "",
+    description: transaction?.description ?? "",
+    paymentMethod: transaction?.paymentMethod ?? "",
+    chequeNumber: "",
+    physicalFileReference: transaction?.physicalFileReference ?? "",
+    status: transaction?.status ?? ("PAID" as "PAID" | "DUE"),
+  });
   const create = useCreateTransaction(projectId);
   const { data: vendors = [] } = useVendorOptions();
   const { data: projects = [] } = useProjectOptions();
@@ -63,24 +85,40 @@ export function TransactionModal({ open, onOpenChange, projectId }: Props) {
     setFiles((prev) => prev.filter((_, idx) => idx !== i));
   }
 
+  const update = useUpdateTransaction();
+  const isPending = create.isPending || update.isPending;
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    create.mutate(
-      {
-        transactionType: form.type,
-        transactionDate: form.date,
-        amount: Number(form.amount),
-        description: form.description,
-        status: form.status,
-        projectId: selectedProjectId,
-        ...(form.vendorId && { vendorId: Number(form.vendorId) }),
-        ...(form.paymentMethod && { paymentMethod: form.paymentMethod }),
-        ...(form.chequeNumber && { chequeNumber: form.chequeNumber }),
-        ...(form.physicalFileReference && {
-          physicalFileReference: form.physicalFileReference,
-        }),
-      },
-      {
+    const payload = {
+      transactionType: form.type,
+      transactionDate: form.date,
+      amount: Number(form.amount),
+      description: form.description,
+      status: form.status,
+      projectId: selectedProjectId,
+      ...(form.vendorId && { vendorId: Number(form.vendorId) }),
+      ...(form.paymentMethod && { paymentMethod: form.paymentMethod }),
+      ...(form.chequeNumber && { chequeNumber: form.chequeNumber }),
+      ...(form.physicalFileReference && {
+        physicalFileReference: form.physicalFileReference,
+      }),
+    };
+    if (isEdit && transaction) {
+      update.mutate(
+        { id: transaction.id, payload },
+        {
+          onSuccess: () => {
+            toast.success("Transaction updated");
+            onOpenChange(false);
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          onError: (err: any) =>
+            toast.error(err?.response?.data?.message ?? "Update failed"),
+        },
+      );
+    } else {
+      create.mutate(payload, {
         onSuccess: async (data) => {
           // Upload any attached files sequentially
           if (files.length > 0) {
@@ -97,8 +135,8 @@ export function TransactionModal({ open, onOpenChange, projectId }: Props) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onError: (err: any) =>
           toast.error(err?.response?.data?.message ?? "Failed to save"),
-      },
-    );
+      });
+    }
   }
 
   const inp =
@@ -118,7 +156,7 @@ export function TransactionModal({ open, onOpenChange, projectId }: Props) {
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#C9A84C]/10">
               <DollarSign size={15} className="text-[#C9A84C]" />
             </span>
-            New Transaction
+            {isEdit ? "Edit Transaction" : "New Transaction"}
           </DialogTitle>
         </DialogHeader>
 
@@ -346,7 +384,11 @@ export function TransactionModal({ open, onOpenChange, projectId }: Props) {
               disabled={create.isPending}
               className="flex-1 bg-[#C9A84C] hover:bg-[#b8963e] text-white rounded-full"
             >
-              {create.isPending ? "Saving..." : "Save Transaction"}
+              {isPending
+                ? "Saving..."
+                : isEdit
+                  ? "Save Changes"
+                  : "Save Transaction"}
             </Button>
           </div>
         </form>
