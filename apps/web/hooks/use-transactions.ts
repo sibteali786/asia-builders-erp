@@ -92,6 +92,7 @@ export function useAllTransactions(
       return res.data;
     },
     enabled: !!projectId,
+    staleTime: 0, // Always fetch fresh data for the full list (no caching)
   });
 }
 
@@ -107,6 +108,7 @@ export function useCreateTransaction(projectId: number) {
       // Invalidate both recent and full list + project detail (totalSpent changes)
       qc.invalidateQueries({ queryKey: ["transactions", "recent", projectId] });
       qc.invalidateQueries({ queryKey: ["transactions", "all", projectId] });
+      qc.invalidateQueries({ queryKey: ["transactions"], exact: false });
       qc.invalidateQueries({ queryKey: ["projects", projectId] });
     },
   });
@@ -159,6 +161,7 @@ export function useGlobalTransactions(
       );
       return res.data;
     },
+    staleTime: 0,
   });
 }
 
