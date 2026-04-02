@@ -14,6 +14,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { VendorsService } from './vendors.service';
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { QueryVendorsDto } from './dto/query-vendors.dto';
+import { AssignVendorDto } from './dto/assign-vendor.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('vendors')
@@ -25,6 +26,15 @@ export class VendorsController {
   findByProject(@Param('projectId', ParseIntPipe) projectId: number) {
     return this.vendorsService.findByProject(projectId);
   }
+  // POST /projects/:projectId/vendors/:vendorId  → link existing vendor to project
+  @Post('projects/:projectId/vendors/:vendorId')
+  assignToProject(
+    @Param('projectId', ParseIntPipe) projectId: number,
+    @Param('vendorId', ParseIntPipe) vendorId: number,
+    @Body() dto: AssignVendorDto,
+  ) {
+    return this.vendorsService.assignToProject(projectId, vendorId, dto);
+  }
   // GET /vendors/:id/transactions?page=1&limit=15  → payment history tab
   @Get(':id/transactions')
   findTransactions(
@@ -35,27 +45,15 @@ export class VendorsController {
     return this.vendorsService.findTransactions(id, page, limit);
   }
 
+  @Get(':id/projects')
+  findProjects(@Param('id', ParseIntPipe) id: number) {
+    return this.vendorsService.findProjects(id);
+  }
   // GET /vendors/:id  → vendor detail header
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.vendorsService.findOne(id);
   }
-
-  // POST /projects/:projectId/vendors/:vendorId  → link existing vendor to project
-  @Post('projects/:projectId/vendors/:vendorId')
-  assignToProject(
-    @Param('projectId', ParseIntPipe) projectId: number,
-    @Param('vendorId', ParseIntPipe) vendorId: number,
-  ) {
-    return this.vendorsService.assignToProject(projectId, vendorId);
-  }
-
-  // POST /vendors  → create vendor (+ optional project link)
-  @Post()
-  create(@Body() dto: CreateVendorDto) {
-    return this.vendorsService.create(dto);
-  }
-
   // PATCH /vendors/:id  → edit vendor profile
   @Patch(':id')
   update(
@@ -64,13 +62,16 @@ export class VendorsController {
   ) {
     return this.vendorsService.update(id, dto);
   }
-
   // DELETE /vendors/:id
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.vendorsService.remove(id);
   }
-
+  // POST /vendors  → create vendor (+ optional project link)
+  @Post()
+  create(@Body() dto: CreateVendorDto) {
+    return this.vendorsService.create(dto);
+  }
   // GET /vendors  → global vendor list
   @Get()
   findAll(@Query() query: QueryVendorsDto) {

@@ -61,18 +61,32 @@ export class DocumentsService {
 
     const txIds = transactions.map((t) => t.id);
 
-    // Step 2: find all documents where entityType = TRANSACTION and entityId IN txIds
-    const docs = await this.docRepo.find({
-      where: {
-        entityType: DocumentEntityType.TRANSACTION,
-        entityId: In(txIds),
-        deletedAt: IsNull(),
-      },
-      relations: ['uploadedBy'],
-      order: { uploadedAt: 'DESC' },
-    });
+    const [vendorDocs, txDocs] = await Promise.all([
+      this.docRepo.find({
+        where: {
+          entityType: DocumentEntityType.VENDOR,
+          entityId: vendorId,
+          deletedAt: IsNull(),
+        },
+        relations: ['uploadedBy'],
+        order: { uploadedAt: 'DESC' },
+      }),
+      txIds.length
+        ? this.docRepo.find({
+            where: {
+              entityType: DocumentEntityType.TRANSACTION,
+              entityId: In(txIds),
+              deletedAt: IsNull(),
+            },
+            relations: ['uploadedBy'],
+            order: { uploadedAt: 'DESC' },
+          })
+        : [],
+    ]);
 
-    return Promise.all(docs.map((d) => this.formatDoc(d)));
+    return Promise.all(
+      [...vendorDocs, ...txDocs].map((d) => this.formatDoc(d)),
+    );
   }
 
   // ─── UPLOAD ───────────────────────────────────────────────────────────────────

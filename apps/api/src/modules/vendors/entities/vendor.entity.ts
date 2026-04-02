@@ -17,14 +17,6 @@ export class Vendor extends SoftDeleteBaseEntity {
   @Column({ name: 'vendor_type', type: 'varchar', length: 50 })
   vendorType: VendorType;
   @Column({
-    name: 'contract_amount',
-    type: 'decimal',
-    precision: 15,
-    scale: 2,
-    nullable: true,
-  })
-  contractAmount: number | null;
-  @Column({
     name: 'contact_person',
     nullable: true,
     type: 'varchar',

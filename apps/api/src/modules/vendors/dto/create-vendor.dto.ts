@@ -26,7 +26,7 @@ export class CreateVendorDto {
     example: VendorType.CONTRACTOR,
   })
   @IsEnum(VendorType)
-  type: VendorType;
+  vendorType: VendorType;
 
   @ApiProperty({
     description: 'The contact phone number of the vendor',

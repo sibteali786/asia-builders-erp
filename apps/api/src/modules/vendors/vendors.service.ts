@@ -18,6 +18,7 @@ import {
   Document,
   DocumentEntityType,
 } from '../documents/entities/document.entity';
+import { AssignVendorDto } from './dto/assign-vendor.dto';
 
 @Injectable()
 export class VendorsService {
@@ -62,7 +63,7 @@ export class VendorsService {
           .getRawOne<{ sum: string }>();
 
         const paidToDate = Number(result?.sum ?? 0);
-        const contractAmount = Number(pv.vendor.contractAmount ?? 0);
+        const contractAmount = Number(pv.contractAmount ?? 0);
 
         return {
           projectVendorId: pv.id,
@@ -81,6 +82,52 @@ export class VendorsService {
     return results;
   }
 
+  async findProjects(vendorId: number) {
+    await this.assertVendorExists(vendorId);
+
+    // Get all project_vendor links for this vendor
+    const links = await this.projectVendorRepo.find({
+      where: { vendor: { id: vendorId }, isActive: true },
+      relations: ['project'],
+    });
+
+    return Promise.all(
+      links.map(async (pv) => {
+        const result = await this.txRepo
+          .createQueryBuilder('t')
+          .select('COALESCE(SUM(t.amount), 0)', 'paid')
+          .where(
+            't.vendor_id = :vendorId AND t.project_id = :projectId AND t.transaction_type = :type AND t.deleted_at IS NULL',
+            {
+              vendorId,
+              projectId: pv.project.id,
+              type: TransactionType.EXPENSE,
+            },
+          )
+          .getRawOne<{ paid: string }>();
+
+        const paid = Number(result?.paid ?? 0);
+        const contractAmount = Number(pv.contractAmount ?? 0);
+        const outstanding = Math.max(contractAmount - paid, 0);
+        const completion =
+          contractAmount > 0
+            ? Math.min(Math.round((paid / contractAmount) * 100), 100)
+            : 0;
+
+        return {
+          projectVendorId: pv.id,
+          projectId: pv.project.id,
+          projectName: pv.project.name,
+          contractDate: pv.createdAt,
+          contractAmount,
+          paid,
+          outstanding,
+          completion,
+        };
+      }),
+    );
+  }
+
   // ─── ASSIGN VENDOR TO PROJECT ─────────────────────────────────────────────────
   // Powers: "Assign New Vendor" card — creates vendor + links to project
   async create(dto: CreateVendorDto) {
@@ -94,11 +141,15 @@ export class VendorsService {
       );
 
     const vendor = this.vendorRepo.create(dto);
-    await this.vendorRepo.save(vendor);
+    return await this.vendorRepo.save(vendor);
   }
   // ─── LINK EXISTING VENDOR TO PROJECT ─────────────────────────────────────────
   // Powers: "Assign New Vendor" modal — picking from existing vendor list
-  async assignToProject(projectId: number, vendorId: number) {
+  async assignToProject(
+    projectId: number,
+    vendorId: number,
+    dto?: AssignVendorDto,
+  ) {
     const project = await this.projectRepo.findOne({
       where: { id: projectId, deletedAt: IsNull() },
     });
@@ -125,7 +176,11 @@ export class VendorsService {
       );
     }
 
-    const link = this.projectVendorRepo.create({ project, vendor });
+    const link = this.projectVendorRepo.create({
+      project,
+      vendor,
+      contractAmount: dto?.contractAmount ?? null,
+    });
     return this.projectVendorRepo.save(link);
   }
   // ─── GLOBAL VENDORS LIST ──────────────────────────────────────────────────────
@@ -136,33 +191,43 @@ export class VendorsService {
 
     const qb = this.vendorRepo
       .createQueryBuilder('v')
-      // Sum all expense transactions for this vendor across all projects
-      .leftJoin(
-        'v.transactions',
-        't',
-        "t.transaction_type = 'EXPENSE' AND t.deleted_at IS NULL",
-      )
       // Join project_vendors to get active project links
       .leftJoin('v.projectVendors', 'pv', 'pv.is_active = true')
       .leftJoin('pv.project', 'p', 'p.deleted_at IS NULL')
+      // replace from .select([ to the closing ])
       .select([
-        'v.id                                    AS id',
-        'v.name                                  AS name',
-        'v.vendor_type                           AS "vendorType"',
-        'v.phone                                 AS phone',
-        'v.contract_amount                       AS "contractAmount"',
-        'COALESCE(SUM(DISTINCT t.amount), 0)     AS "amountPaid"',
+        'v.id                                         AS id',
+        'v.name                                       AS name',
+        'v.vendor_type                                AS "vendorType"',
+        'v.phone                                      AS phone',
+        `COALESCE(SUM(DISTINCT pv.contract_amount), 0) AS "contractAmount"`,
+        `(SELECT COALESCE(SUM(t2.amount), 0)
+    FROM transactions t2
+    WHERE t2.vendor_id = v.id
+      AND t2.transaction_type = 'EXPENSE'
+      AND t2.deleted_at IS NULL
+   )                                             AS "amountPaid"`,
         `GREATEST(
-          COALESCE(v.contract_amount, 0) - COALESCE(SUM(DISTINCT t.amount), 0),
-          0
-        )                                        AS outstanding`,
-        // Active project names + paid per project as JSON array
+    COALESCE(SUM(DISTINCT pv.contract_amount), 0) -
+    (SELECT COALESCE(SUM(t2.amount), 0)
+     FROM transactions t2
+     WHERE t2.vendor_id = v.id
+       AND t2.transaction_type = 'EXPENSE'
+       AND t2.deleted_at IS NULL),
+    0
+  )                                              AS outstanding`,
         `JSON_AGG(
-          DISTINCT JSONB_BUILD_OBJECT(
-            'projectId', p.id,
-            'projectName', p.name
-          )
-        ) FILTER (WHERE p.id IS NOT NULL)        AS "activeProjects"`,
+    DISTINCT JSONB_BUILD_OBJECT(
+      'projectId',   p.id,
+      'projectName', p.name,
+      'paid', (SELECT COALESCE(SUM(t3.amount), 0)
+               FROM transactions t3
+               WHERE t3.vendor_id = v.id
+                 AND t3.project_id = p.id
+                 AND t3.transaction_type = 'EXPENSE'
+                 AND t3.deleted_at IS NULL)
+    )
+  ) FILTER (WHERE p.id IS NOT NULL)              AS "activeProjects"`,
       ])
       .where('v.deleted_at IS NULL')
       .groupBy('v.id');
@@ -212,8 +277,12 @@ export class VendorsService {
     const activeProjectCount = await this.projectVendorRepo.count({
       where: { vendor: { id }, isActive: true },
     });
-
-    const contractAmount = Number(vendor.contractAmount ?? 0);
+    const totalContractAmount = await this.projectVendorRepo
+      .createQueryBuilder('pv')
+      .select('COALESCE(SUM(pv.contract_amount), 0)', 'total')
+      .where('pv.vendor_id = :id AND pv.is_active = true', { id })
+      .getRawOne<{ total: string }>();
+    const contractAmount = Number(totalContractAmount?.total ?? 0);
     const paid = Number(totalPaid);
 
     return {
@@ -255,7 +324,7 @@ export class VendorsService {
       data: rows.map((t) => ({
         id: t.id,
         description: t.description,
-        projectName: t.project.name,
+        projectName: t.project?.name ?? 'Unknown',
         transactionDate: t.transactionDate,
         amount: -Math.abs(Number(t.amount)), // always shown as negative (expense)
         status: t.status,

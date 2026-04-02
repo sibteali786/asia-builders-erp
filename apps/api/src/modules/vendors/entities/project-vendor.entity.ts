@@ -36,6 +36,15 @@ export class ProjectVendor {
   @Column({ type: 'text', nullable: true })
   notes: string | null;
 
+  @Column({
+    name: 'contract_amount',
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    nullable: true,
+  })
+  contractAmount: number | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
