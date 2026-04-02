@@ -142,7 +142,7 @@ export function TransactionModal({
   const inp =
     "w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none focus:border-[#C9A84C] focus:ring-2 focus:ring-[#C9A84C]/20 transition placeholder:text-muted-foreground";
   const lbl =
-    "block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1.5";
+    "block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5";
 
   return (
     <Dialog

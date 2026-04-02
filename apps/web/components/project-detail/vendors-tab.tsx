@@ -65,7 +65,7 @@ export function VendorsTab({ projectId }: { projectId: number }) {
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-0.5">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
                 Paid to Date
               </p>
               <p className="text-base font-bold text-foreground">
@@ -73,7 +73,7 @@ export function VendorsTab({ projectId }: { projectId: number }) {
               </p>
             </div>
             <div className="bg-amber-50 rounded-lg p-3">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-0.5">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
                 Outstanding
               </p>
               <p className="text-base font-bold text-[#C9A84C]">

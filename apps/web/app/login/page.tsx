@@ -64,7 +64,7 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Email field */}
           <div>
-            <label className="block text-xs font-semibold tracking-widest text-gray-500 uppercase mb-1.5">
+            <label className="block text-xs font-semibold tracking-wide text-gray-500 uppercase mb-1.5">
               Email or Username
             </label>
             <input
@@ -80,7 +80,7 @@ export default function LoginPage() {
           {/* Password field */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-semibold tracking-widest text-gray-500 uppercase">
+              <label className="block text-xs font-semibold tracking-wide text-gray-500 uppercase">
                 Password
               </label>
               {/* Placeholder — no backend route yet */}

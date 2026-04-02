@@ -233,6 +233,11 @@ export function useUploadDocument() {
           queryKey: ["documents", "project-all", vars.entityId],
         });
       }
+      if (vars.entityType === "VENDOR") {
+        qc.invalidateQueries({
+          queryKey: ["documents", "vendor", vars.entityId],
+        });
+      }
     },
   });
 }

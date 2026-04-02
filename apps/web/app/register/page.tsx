@@ -125,7 +125,7 @@ export default function RegisterPage() {
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel
                     htmlFor="firstName"
-                    className="text-xs font-semibold tracking-widest text-gray-500 uppercase"
+                    className="text-xs font-semibold tracking-wide text-gray-500 uppercase"
                   >
                     First Name
                   </FieldLabel>
@@ -150,7 +150,7 @@ export default function RegisterPage() {
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel
                     htmlFor="lastName"
-                    className="text-xs font-semibold tracking-widest text-gray-500 uppercase"
+                    className="text-xs font-semibold tracking-wide text-gray-500 uppercase"
                   >
                     Last Name
                   </FieldLabel>
@@ -176,7 +176,7 @@ export default function RegisterPage() {
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel
                     htmlFor="email"
-                    className="text-xs font-semibold tracking-widest text-gray-500 uppercase"
+                    className="text-xs font-semibold tracking-wide text-gray-500 uppercase"
                   >
                     Email or Username
                   </FieldLabel>
@@ -204,7 +204,7 @@ export default function RegisterPage() {
                   <div className="flex items-center justify-between">
                     <FieldLabel
                       htmlFor="password"
-                      className="text-xs font-semibold tracking-widest text-gray-500 uppercase"
+                      className="text-xs font-semibold tracking-wide text-gray-500 uppercase"
                     >
                       Password
                     </FieldLabel>
@@ -247,7 +247,7 @@ export default function RegisterPage() {
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel
                     htmlFor="role"
-                    className="text-xs font-semibold tracking-widest text-gray-500 uppercase"
+                    className="text-xs font-semibold tracking-wide text-gray-500 uppercase"
                   >
                     Role
                   </FieldLabel>
@@ -283,7 +283,7 @@ export default function RegisterPage() {
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel
                     htmlFor="phone"
-                    className="text-xs font-semibold tracking-widest text-gray-500 uppercase"
+                    className="text-xs font-semibold tracking-wide text-gray-500 uppercase"
                   >
                     Phone{" "}
                     <span className="normal-case tracking-normal text-gray-400 font-normal">

@@ -110,7 +110,7 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
             {/* Body */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               <div>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-1">
                   Description
                 </p>
                 <p className="text-base font-semibold text-foreground">
@@ -130,7 +130,7 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
                     className="text-muted-foreground mt-0.5 shrink-0"
                   />
                   <div>
-                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-0.5">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
                       Date
                     </p>
                     <p className="text-sm font-medium text-foreground">
@@ -145,7 +145,7 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
                       className="text-muted-foreground mt-0.5 shrink-0"
                     />
                     <div>
-                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-0.5">
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
                         Reference
                       </p>
                       <p className="text-sm font-medium text-foreground">
@@ -163,7 +163,7 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
                     className="text-muted-foreground mt-0.5 shrink-0"
                   />
                   <div>
-                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-0.5">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
                       Payment Method
                     </p>
                     <p className="text-sm font-medium text-foreground">
@@ -174,7 +174,7 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
               )}
 
               <div>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-0.5">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
                   Project
                 </p>
                 <span className="text-xs font-medium bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full">
