@@ -44,7 +44,7 @@ function TxRow({ tx }: { tx: Transaction }) {
         </span>
       </td>
       <td className="py-3 pr-4">
-        <p className="text-sm font-medium text-foreground">{tx.description}</p>
+        <p className="text-sm font-medium text-[#14181F]">{tx.description}</p>
       </td>
       <td className="py-3 pr-4 text-sm text-muted-foreground">
         {tx.vendor?.name ?? "—"}
@@ -81,7 +81,7 @@ export function TransactionsTab({ projectId }: { projectId: number }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-foreground">
+        <h2 className="text-base font-semibold text-[#14181F]">
           Recent Transactions
         </h2>
         <div className="flex gap-2">

@@ -21,6 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Separator } from "../ui/separator";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -94,7 +95,7 @@ export function ProjectCard({ project }: { project: Project }) {
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-semibold text-foreground text-base truncate">
+              <h3 className="font-semibold text-[#14181F] text-base truncate">
                 {project.name}
               </h3>
               <StatusBadge status={project.status} />
@@ -128,6 +129,7 @@ export function ProjectCard({ project }: { project: Project }) {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        <Separator variant="dashed" />
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 text-xs">
@@ -135,7 +137,7 @@ export function ProjectCard({ project }: { project: Project }) {
             <p className="text-muted-foreground uppercase tracking-wide font-medium mb-0.5">
               Total Spent
             </p>
-            <p className="font-semibold text-foreground text-sm">
+            <p className="font-semibold text-[#14181F] text-sm">
               {formatMoney(project.totalSpent)}
             </p>
           </div>
@@ -167,7 +169,7 @@ export function ProjectCard({ project }: { project: Project }) {
                 <p className="text-muted-foreground uppercase tracking-wide font-medium mb-0.5">
                   Start Date
                 </p>
-                <p className="font-semibold text-foreground text-sm flex items-center gap-1">
+                <p className="font-semibold text-[#14181F] text-sm flex items-center gap-1">
                   <Calendar size={11} />
                   {formatDate(project.startDate)}
                 </p>
@@ -176,7 +178,7 @@ export function ProjectCard({ project }: { project: Project }) {
                 <p className="text-muted-foreground uppercase tracking-wide font-medium mb-0.5">
                   Duration
                 </p>
-                <p className="font-semibold text-foreground text-sm flex items-center gap-1">
+                <p className="font-semibold text-[#14181F] text-sm flex items-center gap-1">
                   <Clock size={11} />
                   {daysSince(project.startDate)} days
                 </p>
@@ -184,11 +186,11 @@ export function ProjectCard({ project }: { project: Project }) {
             </>
           )}
         </div>
-
+        <Separator variant="dashed" />
         {/* Footer */}
         <Link
           href={`/projects/${project.id}`}
-          className="flex items-center justify-center gap-1.5 w-full rounded-full border border-border py-2 text-xs font-medium text-foreground hover:bg-accent transition-colors mt-auto"
+          className="flex items-center justify-center self-end gap-1.5 text-[#14181F] rounded-full border border-[#14181F] text-xs font-medium hover:bg-accent transition-colors mt-auto p-2"
         >
           View Details <ArrowRight size={13} />
         </Link>

@@ -50,7 +50,7 @@ function TxRow({ tx }: { tx: Transaction }) {
         </span>
       </td>
       <td className="py-3.5 pr-4">
-        <p className="text-sm font-medium text-foreground">{tx.description}</p>
+        <p className="text-sm font-medium text-[#14181F]">{tx.description}</p>
       </td>
       <td className="py-3.5 pr-4 text-sm text-muted-foreground">
         {tx.vendor?.name ?? "—"}
@@ -193,7 +193,7 @@ export default function ProjectTransactionsPage({
             <ArrowLeft size={18} />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">
+            <h1 className="text-2xl font-bold text-[#14181F]">
               All Transactions
             </h1>
             {meta && (

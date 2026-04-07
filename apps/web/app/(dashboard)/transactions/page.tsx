@@ -69,7 +69,7 @@ function TxRow({
         {formatDate(tx.transactionDate as string)}
       </td>
       <td className="py-4 pr-4 w-28">
-        <span className="text-xs font-medium bg-muted px-2 py-0.5 rounded-full truncate max-w-[100px] inline-block">
+        <span className="text-xs text-[#14181F] font-medium bg-muted px-2 py-0.5 rounded-full truncate max-w-[100px] inline-block">
           {tx.project.name}
         </span>
       </td>
@@ -86,7 +86,7 @@ function TxRow({
             )}
           </span>
           <div>
-            <p className="text-sm font-medium text-foreground">
+            <p className="text-sm font-medium text-[#14181F]">
               {tx.description}
             </p>
             <p className="text-xs text-muted-foreground">

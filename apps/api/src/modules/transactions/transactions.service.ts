@@ -380,6 +380,7 @@ export class TransactionsService {
       transactionType: t.transactionType,
       transactionDate: t.transactionDate,
       description: t.description,
+      status: t.status,
       amount:
         t.transactionType === TransactionType.EXPENSE
           ? -Math.abs(Number(t.amount)) // negative for expense

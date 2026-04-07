@@ -42,9 +42,7 @@ export function VendorsTab({ projectId }: { projectId: number }) {
                 {initials(v.name)}
               </div>
               <div>
-                <p className="font-semibold text-foreground text-sm">
-                  {v.name}
-                </p>
+                <p className="font-semibold text-[#14181F] text-sm">{v.name}</p>
                 <div className="flex items-center gap-3 mt-0.5">
                   <span className="text-xs text-purple-600 font-medium bg-purple-50 px-2 py-0.5 rounded-full">
                     {v.vendorType}
@@ -58,7 +56,7 @@ export function VendorsTab({ projectId }: { projectId: number }) {
             </div>
             <ArrowUpRight
               size={16}
-              className="text-muted-foreground cursor-pointer hover:text-foreground"
+              className="text-muted-foreground cursor-pointer hover:text-[#14181F]"
             />
           </div>
 
@@ -68,7 +66,7 @@ export function VendorsTab({ projectId }: { projectId: number }) {
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
                 Paid to Date
               </p>
-              <p className="text-base font-bold text-foreground">
+              <p className="text-base font-bold text-[#14181F]">
                 {formatMoney(v.paidToDate)}
               </p>
             </div>

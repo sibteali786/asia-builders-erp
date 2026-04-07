@@ -4,11 +4,11 @@ import { useState } from "react";
 import {
   X,
   Calendar,
-  Hash,
   CreditCard,
   FileText,
   Pencil,
   Trash2,
+  File,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -92,10 +92,10 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
                 >
                   {tx.transactionType}
                 </span>
-                <p className="text-2xl font-bold text-foreground mt-3">
+                <p className="text-2xl font-bold text-[#14181F] mt-3">
                   {tx.amount < 0 ? "-" : "+"}${formatMoney(tx.amount)}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-[#14181F] mt-1">
                   Balance after: ${formatMoney(tx.balance)}
                 </p>
               </div>
@@ -110,46 +110,46 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
             {/* Body */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               <div>
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-1">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-1">
                   Description
                 </p>
-                <p className="text-base font-semibold text-foreground">
+                <p className="text-lg font-semibold text-[#14181F]">
                   {tx.description}
                 </p>
                 {tx.vendor && (
-                  <p className="text-sm text-muted-foreground mt-0.5">
+                  <p className="text-sm text-foreground mt-0.5">
                     {tx.vendor.name}
                   </p>
                 )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-2 bg-[#F6F5F44D] border border-[#EBE9E566] p-3 rounded-[12px]">
                   <Calendar
                     size={14}
                     className="text-muted-foreground mt-0.5 shrink-0"
                   />
                   <div>
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
                       Date
                     </p>
-                    <p className="text-sm font-medium text-foreground">
+                    <p className="text-sm text-[#14181F] font-medium">
                       {formatDate(tx.transactionDate as string)}
                     </p>
                   </div>
                 </div>
                 {tx.physicalFileReference && (
-                  <div className="flex items-start gap-2">
-                    <Hash
+                  <div className="flex items-start gap-2 bg-[#F6F5F44D] border border-[#EBE9E566] p-3 rounded-[12px]">
+                    <File
                       size={14}
                       className="text-muted-foreground mt-0.5 shrink-0"
                     />
                     <div>
-                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
                         Reference
                       </p>
-                      <p className="text-sm font-medium text-foreground">
-                        {tx.physicalFileReference}
+                      <p className="text-sm font-medium text-[#14181F]">
+                        {"#" + tx.physicalFileReference}
                       </p>
                     </div>
                   </div>
@@ -157,16 +157,16 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
               </div>
 
               {tx.paymentMethod && (
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-2 bg-[#F6F5F44D] border border-[#EBE9E566] p-3 rounded-[12px]">
                   <CreditCard
                     size={14}
                     className="text-muted-foreground mt-0.5 shrink-0"
                   />
                   <div>
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
                       Payment Method
                     </p>
-                    <p className="text-sm font-medium text-foreground">
+                    <p className="text-sm font-medium text-[#14181F]">
                       {PAYMENT_LABELS[tx.paymentMethod] ?? tx.paymentMethod}
                     </p>
                   </div>
@@ -174,7 +174,7 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
               )}
 
               <div>
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
                   Project
                 </p>
                 <span className="text-xs font-medium bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full">
@@ -196,13 +196,13 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
                     {[...Array(tx.fileCount)].map((_, i) => (
                       <div
                         key={i}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"
+                        className="flex items-center gap-3 bg-[#F6F5F44D] border border-[#EBE9E566] p-3 rounded-[12px]"
                       >
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50">
                           <FileText size={14} className="text-amber-600" />
                         </div>
                         <div>
-                          <p className="text-xs font-medium text-foreground">
+                          <p className="text-xs font-medium text-[#14181F]">
                             Attachment {i + 1}
                           </p>
                           <p className="text-xs text-muted-foreground">
@@ -220,7 +220,7 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
             <div className="p-6 border-t border-border flex gap-3">
               <Button
                 variant="outline"
-                className="flex-1 gap-2"
+                className="flex-1 gap-2 text-[#14181F]"
                 onClick={() => setEditOpen(true)}
               >
                 <Pencil size={14} /> Edit

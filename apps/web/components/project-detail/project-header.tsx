@@ -45,7 +45,7 @@ export function ProjectHeader({ project }: { project: ProjectDetail }) {
             <ArrowLeft size={18} />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">
+            <h1 className="text-3xl font-bold text-[#14181F]">
               {project.name}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1">
@@ -74,7 +74,7 @@ export function ProjectHeader({ project }: { project: ProjectDetail }) {
             <p className="text-xs uppercase text-muted-foreground font-semibold">
               Location
             </p>
-            <p className="text-sm font-semibold text-foreground">
+            <p className="text-sm font-semibold text-[#14181F]">
               {project.location}
             </p>
           </div>
@@ -104,7 +104,7 @@ export function ProjectHeader({ project }: { project: ProjectDetail }) {
             <p className="text-xs uppercase text-muted-foreground font-semibold">
               Started Date
             </p>
-            <p className="text-sm font-semibold text-foreground">
+            <p className="text-sm font-semibold text-[#14181F]">
               {formatDate(project.startDate)}
             </p>
           </div>

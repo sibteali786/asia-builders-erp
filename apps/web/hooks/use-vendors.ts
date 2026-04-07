@@ -59,6 +59,7 @@ export interface VendorTransaction {
   transactionDate: string;
   amount: number;
   status: "PAID" | "DUE";
+  fileCount: number;
 }
 
 export interface VendorTransactionResponse {

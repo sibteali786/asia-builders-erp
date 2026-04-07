@@ -29,7 +29,7 @@ export function ProjectStats({ project }: { project: ProjectDetail }) {
             <Wallet size={24} className="text-[#C9A84C]" />
           </span>
         </div>
-        <p className="text-5xl font-bold text-foreground mt-3">
+        <p className="text-5xl font-bold text-[#14181F] mt-3">
           {Number(project.totalSpent) > 100000
             ? formatMoney(project.totalSpent.slice(0, 5)) + "..."
             : formatMoney(project.totalSpent)}
@@ -46,7 +46,7 @@ export function ProjectStats({ project }: { project: ProjectDetail }) {
         </div>
         <div className="space-y-1">
           <p className="text-xs text-muted-foreground">Start Date</p>
-          <p className="text-lg font-bold text-foreground">
+          <p className="text-lg font-bold text-[#14181F]">
             {formatDate(project.startDate)}
           </p>
           {project.completionDate && (
@@ -54,7 +54,7 @@ export function ProjectStats({ project }: { project: ProjectDetail }) {
               <p className="text-xs text-muted-foreground mt-2">
                 Expected Completion
               </p>
-              <p className="text-sm font-semibold text-foreground">
+              <p className="text-sm font-semibold text-[#14181F]">
                 {formatDate(project.completionDate)}
               </p>
             </>
@@ -67,7 +67,7 @@ export function ProjectStats({ project }: { project: ProjectDetail }) {
         <div className="flex items-center gap-2 text-sm uppercase tracking-[0.7px] text-muted-foreground font-semibold mb-3">
           <Activity size={13} /> Current Status
         </div>
-        <p className="text-3xl font-bold text-foreground capitalize">
+        <p className="text-3xl font-bold text-[#14181F] capitalize">
           {project.status.replace("_", " ")}
         </p>
         <p className="text-sm text-muted-foreground mt-1">
