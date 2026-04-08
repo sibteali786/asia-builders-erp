@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import { useAllTransactions, type Transaction } from "@/hooks/use-transactions";
 import { TransactionModal } from "@/components/transactions/transaction-modal";
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/utils";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatDate(d: string) {
@@ -21,9 +22,6 @@ function formatDate(d: string) {
     day: "2-digit",
     year: "numeric",
   });
-}
-function formatMoney(v: number) {
-  return Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2 });
 }
 
 // ── Status badge ──────────────────────────────────────────────────────────────
@@ -61,7 +59,7 @@ function TxRow({ tx }: { tx: Transaction }) {
       <td
         className={`py-3.5 pr-4 text-sm font-semibold ${tx.amount >= 0 ? "text-green-600" : "text-red-500"}`}
       >
-        {tx.amount >= 0 ? "+" : "-"}${formatMoney(tx.amount)}
+        {tx.amount >= 0 ? "+" : "-"}${formatCurrency(tx.amount)}
       </td>
       <td className="py-3.5 pr-4">
         <span
@@ -322,7 +320,7 @@ export default function ProjectTransactionsPage({
                       Total Debits{" "}
                     </span>
                     <span className="text-red-500 font-bold">
-                      {formatMoney(data.totals.totalDebits)}
+                      {formatCurrency(data.totals.totalDebits)}
                     </span>
                   </div>
                   <div>
@@ -330,7 +328,7 @@ export default function ProjectTransactionsPage({
                       Total Credits{" "}
                     </span>
                     <span className="text-green-600 font-bold">
-                      {formatMoney(data.totals.totalCredits)}
+                      {formatCurrency(data.totals.totalCredits)}
                     </span>
                   </div>
                   <div>
@@ -341,7 +339,7 @@ export default function ProjectTransactionsPage({
                       className={`font-bold ${data.totals.netFlow >= 0 ? "text-green-600" : "text-red-500"}`}
                     >
                       {data.totals.netFlow >= 0 ? "+" : "-"}
-                      {formatMoney(data.totals.netFlow)}
+                      {formatCurrency(data.totals.netFlow)}
                     </span>
                   </div>
                 </div>

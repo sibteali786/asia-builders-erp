@@ -15,6 +15,7 @@ import {
   GlobalTransaction,
   useGlobalTransactions,
 } from "@/hooks/use-transactions";
+import { formatCurrency } from "@/lib/utils";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatDate(d: string) {
@@ -22,9 +23,6 @@ function formatDate(d: string) {
     day: "2-digit",
     month: "2-digit",
   });
-}
-function formatMoney(v: number) {
-  return Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2 });
 }
 
 // ── Type filter pill ──────────────────────────────────────────────────────────
@@ -102,13 +100,13 @@ function TxRow({
         </div>
       </td>
       <td className="py-4 pr-4 text-sm text-red-500 font-medium text-right">
-        {!isIncome ? `-${formatMoney(tx.amount)}` : ""}
+        {!isIncome ? `-${formatCurrency(tx.amount)}` : ""}
       </td>
       <td className="py-4 pr-4 text-sm text-green-600 font-medium text-right">
-        {isIncome ? `+${formatMoney(tx.amount)}` : ""}
+        {isIncome ? `+${formatCurrency(tx.amount)}` : ""}
       </td>
       <td className="py-4 pr-4 text-sm text-foreground text-right">
-        {formatMoney(tx.balance)}
+        {formatCurrency(tx.balance)}
       </td>
       <td className="py-4 pr-4 text-xs text-muted-foreground">
         {tx.fileCount > 0 && (
@@ -245,7 +243,7 @@ export default function TransactionsPage() {
                     Total Debits{" "}
                   </span>
                   <span className="text-red-500 font-bold">
-                    {formatMoney(data.totals.totalDebits)}
+                    {formatCurrency(data.totals.totalDebits)}
                   </span>
                 </div>
                 <div>
@@ -253,7 +251,7 @@ export default function TransactionsPage() {
                     Total Credits{" "}
                   </span>
                   <span className="text-green-600 font-bold">
-                    {formatMoney(data.totals.totalCredits)}
+                    {formatCurrency(data.totals.totalCredits)}
                   </span>
                 </div>
                 <div>
@@ -264,7 +262,7 @@ export default function TransactionsPage() {
                     className={`font-bold ${data.totals.netFlow >= 0 ? "text-green-600" : "text-red-500"}`}
                   >
                     {data.totals.netFlow >= 0 ? "+" : "-"}
-                    {formatMoney(data.totals.netFlow)}
+                    {formatCurrency(data.totals.netFlow)}
                   </span>
                 </div>
               </div>

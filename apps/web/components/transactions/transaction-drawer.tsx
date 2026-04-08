@@ -26,6 +26,7 @@ import { TransactionModal } from "./transaction-modal";
 import { useDeleteTransaction } from "@/hooks/use-transactions";
 import type { GlobalTransaction } from "@/hooks/use-transactions";
 import { useAuthStore } from "@/store/auth.store";
+import { formatCurrency } from "@/lib/utils";
 
 interface Props {
   transaction: GlobalTransaction | null;
@@ -39,9 +40,6 @@ function formatDate(d: string) {
     month: "2-digit",
     year: "numeric",
   });
-}
-function formatMoney(v: number) {
-  return Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2 });
 }
 const PAYMENT_LABELS: Record<string, string> = {
   CASH: "Cash",
@@ -93,10 +91,10 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
                   {tx.transactionType}
                 </span>
                 <p className="text-2xl font-bold text-[#14181F] mt-3">
-                  {tx.amount < 0 ? "-" : "+"}${formatMoney(tx.amount)}
+                  {tx.amount < 0 ? "-" : "+"}${formatCurrency(tx.amount)}
                 </p>
                 <p className="text-xs text-[#14181F] mt-1">
-                  Balance after: ${formatMoney(tx.balance)}
+                  Balance after: ${formatCurrency(tx.balance)}
                 </p>
               </div>
               <button

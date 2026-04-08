@@ -7,6 +7,7 @@ import { useRecentTransactions } from "@/hooks/use-transactions";
 import { TransactionModal } from "@/components/transactions/transaction-modal";
 import { Button } from "@/components/ui/button";
 import type { Transaction } from "@/hooks/use-transactions";
+import { formatCurrency } from "@/lib/utils";
 
 const STATUS_STYLE: Record<string, string> = {
   PAID: "bg-green-100 text-green-700",
@@ -19,13 +20,6 @@ function formatDate(d: string) {
     day: "2-digit",
     year: "numeric",
   });
-}
-
-function formatAmount(amount: number) {
-  const abs = Math.abs(amount).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-  });
-  return amount >= 0 ? `+$${abs}` : `-$${abs}`;
 }
 
 function TxRow({ tx }: { tx: Transaction }) {
@@ -55,7 +49,7 @@ function TxRow({ tx }: { tx: Transaction }) {
       <td
         className={`py-3 pr-4 text-sm font-semibold ${tx.amount >= 0 ? "text-green-600" : "text-red-500"}`}
       >
-        {formatAmount(tx.amount)}
+        {formatCurrency(tx.amount, { signed: true })}
       </td>
       <td className="py-3 pr-4">
         <span

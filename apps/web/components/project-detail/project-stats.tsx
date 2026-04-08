@@ -1,13 +1,7 @@
 import { Wallet, CalendarDays, Activity } from "lucide-react";
 import type { ProjectDetail } from "@/hooks/use-project-detail";
+import { formatCurrency } from "@/lib/utils";
 
-function formatMoney(v: string | number) {
-  return Number(v).toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  });
-}
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString("en-US", {
     month: "short",
@@ -31,8 +25,8 @@ export function ProjectStats({ project }: { project: ProjectDetail }) {
         </div>
         <p className="text-5xl font-bold text-[#14181F] mt-3">
           {Number(project.totalSpent) > 100000
-            ? formatMoney(project.totalSpent.slice(0, 5)) + "..."
-            : formatMoney(project.totalSpent)}
+            ? formatCurrency(project.totalSpent.slice(0, 5)) + "..."
+            : formatCurrency(project.totalSpent)}
         </p>
         <p className="text-sm text-muted-foreground mt-1">
           As of latest financial statement

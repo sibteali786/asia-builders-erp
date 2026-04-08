@@ -200,7 +200,7 @@ export function ProjectModal({ open, onOpenChange, project }: Props) {
                 <label className={labelCls}>Total Cost Spent</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                    $
+                    Rs
                   </span>
                   <input
                     type="number"
@@ -219,7 +219,7 @@ export function ProjectModal({ open, onOpenChange, project }: Props) {
                 <label className={labelCls}>Sale Amount (Sold For)</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                    $
+                    Rs
                   </span>
                   <input
                     type="number"
