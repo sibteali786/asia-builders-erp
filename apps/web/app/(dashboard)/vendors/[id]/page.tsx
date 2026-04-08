@@ -62,7 +62,7 @@ function AgreementsTab({
   onNewAgreement: () => void;
 }) {
   const { data: projects = [], isLoading } = useVendorProjects(vendorId);
-
+  const router = useRouter();
   if (isLoading)
     return (
       <div className="space-y-3">
@@ -82,7 +82,12 @@ function AgreementsTab({
       {projects.map((p) => (
         <div
           key={p.projectVendorId}
-          className="bg-white rounded-xl border border-border p-5 space-y-4"
+          className="bg-white rounded-xl border border-border p-5 space-y-4 hover:cursor-pointer"
+          onClick={() =>
+            router.push(
+              `/vendors/${vendorId}/projects/${p.projectId}/transactions`,
+            )
+          }
         >
           <div className="flex items-start justify-between">
             <div>
