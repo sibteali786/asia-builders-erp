@@ -2,10 +2,7 @@
 
 import { Phone, ArrowUpRight, Link2 } from "lucide-react";
 import { useProjectVendors } from "@/hooks/use-project-vendors";
-
-function formatMoney(v: number) {
-  return v.toLocaleString("en-US");
-}
+import { formatCurrency } from "@/lib/utils";
 
 function initials(name: string) {
   return name
@@ -62,20 +59,20 @@ export function VendorsTab({ projectId }: { projectId: number }) {
 
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3">
-            <div>
+            <div className="bg-[#F6F5F44D] rounded-lg p-2">
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
                 Paid to Date
               </p>
               <p className="text-base font-bold text-[#14181F]">
-                {formatMoney(v.paidToDate)}
+                {formatCurrency(v.paidToDate)}
               </p>
             </div>
-            <div className="bg-amber-50 rounded-lg p-3">
+            <div className="bg-[#F59F0A0D] rounded-lg p-3 border-[#F59F0A33] border">
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
                 Outstanding
               </p>
-              <p className="text-base font-bold text-[#C9A84C]">
-                {formatMoney(v.outstanding)}
+              <p className="text-base font-bold text-[#F59F0A]">
+                {formatCurrency(v.outstanding)}
               </p>
             </div>
           </div>

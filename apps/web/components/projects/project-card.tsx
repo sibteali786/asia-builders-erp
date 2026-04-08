@@ -22,15 +22,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "../ui/separator";
+import { formatCurrency } from "@/lib/utils";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function formatMoney(value: string | number | null): string {
-  const n = Number(value ?? 0);
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n.toLocaleString();
-}
 
 function daysSince(dateStr: string): number {
   return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000);
@@ -138,7 +132,7 @@ export function ProjectCard({ project }: { project: Project }) {
               Total Spent
             </p>
             <p className="font-semibold text-[#14181F] text-sm">
-              {formatMoney(project.totalSpent)}
+              {formatCurrency(project.totalSpent)}
             </p>
           </div>
           {isSold && project.salePrice ? (
@@ -148,7 +142,7 @@ export function ProjectCard({ project }: { project: Project }) {
                   Sold For
                 </p>
                 <p className="font-semibold text-foreground text-sm">
-                  {formatMoney(project.salePrice)}
+                  {formatCurrency(project.salePrice)}
                 </p>
               </div>
               <div>
@@ -159,7 +153,7 @@ export function ProjectCard({ project }: { project: Project }) {
                   className={`font-semibold text-sm ${profit && profit > 0 ? "text-green-600" : "text-red-500"}`}
                 >
                   {profit && profit > 0 ? "+" : ""}
-                  {formatMoney(profit)}
+                  {formatCurrency(profit ?? 0)}
                 </p>
               </div>
             </>

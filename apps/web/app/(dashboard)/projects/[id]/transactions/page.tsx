@@ -59,7 +59,8 @@ function TxRow({ tx }: { tx: Transaction }) {
       <td
         className={`py-3.5 pr-4 text-sm font-semibold ${tx.amount >= 0 ? "text-green-600" : "text-red-500"}`}
       >
-        {tx.amount >= 0 ? "+" : "-"}${formatCurrency(tx.amount)}
+        {tx.amount >= 0 ? "+" : "-"}
+        {formatCurrency(tx.amount)}
       </td>
       <td className="py-3.5 pr-4">
         <span
