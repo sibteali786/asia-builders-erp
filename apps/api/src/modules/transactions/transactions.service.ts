@@ -243,26 +243,38 @@ export class TransactionsService {
 
     const total = Number(countResult?.cnt ?? 0);
 
+    const data = rows.map((r) => ({
+      id: Number(r.id),
+      transactionType: r.transactionType,
+      transactionDate: r.transactionDate,
+      description: r.description,
+      amount:
+        r.transactionType === TransactionType.EXPENSE
+          ? -Math.abs(Number(r.amount))
+          : Math.abs(Number(r.amount)),
+      status: r.status,
+      paymentMethod: r.paymentMethod,
+      physicalFileReference: r.physicalFileReference,
+      fileCount: Number(r.fileCount ?? 0),
+      createdAt: r.createdAt,
+      vendor: r.vendorId
+        ? { id: Number(r.vendorId), name: r.vendorName }
+        : null,
+    }));
+
+    const totals = data.reduce(
+      (acc, t) => {
+        if (t.amount < 0) acc.totalDebits += Math.abs(t.amount);
+        else acc.totalCredits += t.amount;
+        return acc;
+      },
+      { totalDebits: 0, totalCredits: 0 },
+    );
+
     return {
-      data: rows.map((r) => ({
-        id: Number(r.id),
-        transactionType: r.transactionType,
-        transactionDate: r.transactionDate,
-        description: r.description,
-        amount:
-          r.transactionType === TransactionType.EXPENSE
-            ? -Math.abs(Number(r.amount))
-            : Math.abs(Number(r.amount)),
-        status: r.status,
-        paymentMethod: r.paymentMethod,
-        physicalFileReference: r.physicalFileReference,
-        fileCount: Number(r.fileCount ?? 0),
-        createdAt: r.createdAt,
-        vendor: r.vendorId
-          ? { id: Number(r.vendorId), name: r.vendorName }
-          : null,
-      })),
+      data,
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+      totals: { ...totals, netFlow: totals.totalCredits - totals.totalDebits },
     };
   }
 

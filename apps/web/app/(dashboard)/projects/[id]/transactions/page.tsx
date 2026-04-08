@@ -302,6 +302,7 @@ export default function ProjectTransactionsPage({
             </table>
 
             {/* Footer */}
+            {/* Footer */}
             <div className="border-t border-border px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
               <p className="text-xs text-muted-foreground">
                 Showing{" "}
@@ -312,6 +313,40 @@ export default function ProjectTransactionsPage({
                 of <span className="font-medium">{meta?.total ?? 0}</span>{" "}
                 results
               </p>
+
+              {/* Totals — same pattern as global transactions page */}
+              {data?.totals && (
+                <div className="flex items-center gap-6 text-xs ml-auto">
+                  <div>
+                    <span className="text-muted-foreground uppercase tracking-wide font-semibold">
+                      Total Debits{" "}
+                    </span>
+                    <span className="text-red-500 font-bold">
+                      {formatMoney(data.totals.totalDebits)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground uppercase tracking-wide font-semibold">
+                      Total Credits{" "}
+                    </span>
+                    <span className="text-green-600 font-bold">
+                      {formatMoney(data.totals.totalCredits)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground uppercase tracking-wide font-semibold">
+                      Net Flow{" "}
+                    </span>
+                    <span
+                      className={`font-bold ${data.totals.netFlow >= 0 ? "text-green-600" : "text-red-500"}`}
+                    >
+                      {data.totals.netFlow >= 0 ? "+" : "-"}
+                      {formatMoney(data.totals.netFlow)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <Pagination
                 page={page}
                 totalPages={meta?.totalPages ?? 1}
