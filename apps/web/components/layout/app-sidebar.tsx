@@ -146,8 +146,19 @@ export function AppSidebar() {
                 <SidebarMenuButton className="h-auto px-3 py-2 gap-3 rounded-md hover:bg-accent group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
                   {/* Avatar circle with initials */}
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C9A84C] text-white text-xs font-semibold">
-                    {user?.firstName?.[0]?.toUpperCase() ?? "?"}
-                    {user?.lastName?.[0]?.toUpperCase() ?? ""}
+                    {user?.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={user.avatarUrl}
+                        alt="Profile"
+                        className="h-full w-full rounded-full object-cover"
+                      />
+                    ) : (
+                      <>
+                        {user?.firstName?.[0]?.toUpperCase() ?? "?"}
+                        {user?.lastName?.[0]?.toUpperCase() ?? ""}
+                      </>
+                    )}
                   </div>
 
                   {/* Name + email — hidden when collapsed */}
