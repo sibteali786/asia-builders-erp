@@ -11,6 +11,7 @@ import {
   UploadedFile,
   ParseIntPipe,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -26,6 +27,7 @@ import { UploadDocumentDto } from './dto/upload-document.dto';
 import { User } from '../users/entities/user.entity';
 import type { Request as ExpressRequest } from 'express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { QueryDocumentsDto } from './dto/query-documents.dto';
 
 @ApiTags('Documents')
 @ApiBearerAuth()
@@ -33,7 +35,13 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 @Controller()
 export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
-
+  // GET /documents  — global paginated list
+  @ApiOperation({ summary: 'Get all documents with optional search/filter' })
+  @ApiResponse({ status: 200, description: 'Paginated document list' })
+  @Get('documents')
+  findAll(@Query() query: QueryDocumentsDto) {
+    return this.documentsService.findAll(query);
+  }
   // GET /projects/:projectId/documents
   @ApiOperation({ summary: 'Get all documents for a project' })
   @ApiResponse({ status: 200, description: 'List of project documents' })

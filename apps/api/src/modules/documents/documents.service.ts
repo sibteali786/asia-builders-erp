@@ -11,6 +11,8 @@ import { Transaction } from '../transactions/entities/transaction.entity';
 import { User } from '../users/entities/user.entity';
 import { StorageService } from '../../common/storage/storage.service';
 import { UploadDocumentDto } from './dto/upload-document.dto';
+import { Project } from '../projects/entities/project.entity';
+import { Vendor } from '../vendors/entities/vendor.entity';
 
 // Allowed MIME types — extend as needed
 const ALLOWED_MIME_TYPES = [
@@ -30,6 +32,10 @@ export class DocumentsService {
     @InjectRepository(Transaction)
     private txRepo: Repository<Transaction>,
     private storageService: StorageService,
+    @InjectRepository(Project)
+    private projectRepo: Repository<Project>,
+    @InjectRepository(Vendor)
+    private vendorRepo: Repository<Vendor>,
   ) {}
 
   // ─── PROJECT DOCUMENTS TAB ────────────────────────────────────────────────────
@@ -174,6 +180,156 @@ export class DocumentsService {
             name: `${d.uploadedBy.firstName} ${d.uploadedBy.lastName}`,
           }
         : null,
+    };
+  }
+
+  async findAll(query: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    entityType?: DocumentEntityType;
+  }) {
+    const { page = 1, limit = 20, search, entityType } = query;
+    const skip = (page - 1) * limit;
+
+    // We use a raw query so we can LEFT JOIN the 3 possible parent tables
+    // and pick the right "label" depending on entityType via CASE WHEN
+    const qb = this.docRepo
+      .createQueryBuilder('d')
+      // Join all 3 possible parent entities — only one will match per row
+      .leftJoin(
+        'projects',
+        'p',
+        "d.entity_type = 'PROJECT' AND d.entity_id = p.id AND p.deleted_at IS NULL",
+      )
+      .leftJoin(
+        'transactions',
+        't',
+        "d.entity_type = 'TRANSACTION' AND d.entity_id = t.id AND t.deleted_at IS NULL",
+      )
+      .leftJoin(
+        'vendors',
+        'v',
+        "d.entity_type = 'VENDOR' AND d.entity_id = v.id AND v.deleted_at IS NULL",
+      )
+      .select([
+        'd.id            AS id',
+        'd.file_name     AS "fileName"',
+        'd.file_path     AS "filePath"',
+        'd.file_size     AS "fileSize"',
+        'd.file_type     AS "fileType"',
+        'd.mime_type     AS "mimeType"',
+        'd.entity_type   AS "entityType"',
+        'd.entity_id     AS "entityId"',
+        'd.uploaded_at   AS "uploadedAt"',
+        // CASE picks the right label depending on which join matched
+        `CASE
+         WHEN d.entity_type = 'PROJECT'     THEN p.name
+         WHEN d.entity_type = 'TRANSACTION' THEN t.description
+         WHEN d.entity_type = 'VENDOR'      THEN v.name
+         ELSE NULL
+       END AS "entityLabel"`,
+        // Secondary context: for TRANSACTION docs, also show the project name
+        `CASE
+         WHEN d.entity_type = 'TRANSACTION' THEN (
+           SELECT pr.name FROM projects pr
+           WHERE pr.id = t.project_id AND pr.deleted_at IS NULL
+           LIMIT 1
+         )
+         ELSE NULL
+       END AS "parentProjectName"`,
+      ])
+      .where('d.deleted_at IS NULL')
+      .orderBy('d.uploaded_at', 'DESC')
+      .offset(skip)
+      .limit(limit);
+
+    if (entityType) {
+      qb.andWhere('d.entity_type = :entityType', { entityType });
+    }
+
+    if (search) {
+      // Search by filename, entity label (project/vendor name), or transaction description
+      qb.andWhere(
+        `(
+        d.file_name ILIKE :q
+        OR p.name ILIKE :q
+        OR t.description ILIKE :q
+        OR v.name ILIKE :q
+      )`,
+        { q: `%${search}%` },
+      );
+    }
+
+    // Separate count query — same filters, no pagination
+    const countQb = this.docRepo
+      .createQueryBuilder('d')
+      .leftJoin(
+        'projects',
+        'p',
+        "d.entity_type = 'PROJECT' AND d.entity_id = p.id AND p.deleted_at IS NULL",
+      )
+      .leftJoin(
+        'transactions',
+        't',
+        "d.entity_type = 'TRANSACTION' AND d.entity_id = t.id AND t.deleted_at IS NULL",
+      )
+      .leftJoin(
+        'vendors',
+        'v',
+        "d.entity_type = 'VENDOR' AND d.entity_id = v.id AND v.deleted_at IS NULL",
+      )
+      .select('COUNT(*) AS cnt')
+      .where('d.deleted_at IS NULL');
+
+    if (entityType)
+      countQb.andWhere('d.entity_type = :entityType', { entityType });
+    if (search) {
+      countQb.andWhere(
+        `(d.file_name ILIKE :q OR p.name ILIKE :q OR t.description ILIKE :q OR v.name ILIKE :q)`,
+        { q: `%${search}%` },
+      );
+    }
+
+    const [rows, countResult] = await Promise.all([
+      qb.getRawMany<{
+        id: string;
+        fileName: string;
+        filePath: string;
+        fileSize: string;
+        fileType: string;
+        mimeType: string;
+        entityType: DocumentEntityType;
+        entityId: string;
+        uploadedAt: Date;
+        entityLabel: string | null;
+        parentProjectName: string | null;
+      }>(),
+      countQb.getRawOne<{ cnt: string }>(),
+    ]);
+
+    const total = Number(countResult?.cnt ?? 0);
+
+    // Generate signed URLs for all docs in parallel
+    const data = await Promise.all(
+      rows.map(async (r) => ({
+        id: Number(r.id),
+        fileName: r.fileName,
+        fileSize: Number(r.fileSize),
+        fileType: r.fileType,
+        mimeType: r.mimeType,
+        entityType: r.entityType,
+        entityId: Number(r.entityId),
+        uploadedAt: r.uploadedAt,
+        entityLabel: r.entityLabel,
+        parentProjectName: r.parentProjectName,
+        downloadUrl: await this.storageService.getSignedUrl(r.filePath),
+      })),
+    );
+
+    return {
+      data,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
 

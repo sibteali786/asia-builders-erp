@@ -7,10 +7,12 @@ import { Transaction } from '../transactions/entities/transaction.entity';
 import { DocumentsService } from './documents.service';
 import { DocumentsController } from './documents.controller';
 import { StorageService } from '../../common/storage/storage.service';
+import { Project } from '../projects/entities/project.entity';
+import { Vendor } from '../vendors/entities/vendor.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Document, Transaction]),
+    TypeOrmModule.forFeature([Document, Transaction, Project, Vendor]),
     // memoryStorage keeps uploaded files as Buffer in memory
     // When R2 is ready, replace with disk or streaming upload
     MulterModule.register({ storage: memoryStorage() }),

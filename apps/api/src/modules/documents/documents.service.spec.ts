@@ -5,6 +5,8 @@ import { Document } from './entities/document.entity';
 import { Repository } from 'typeorm';
 import { Transaction } from '../transactions/entities/transaction.entity';
 import { StorageService } from '../../common/storage/storage.service';
+import { Project } from '../projects/entities/project.entity';
+import { Vendor } from '../vendors/entities/vendor.entity';
 
 describe('DocumentsService', () => {
   let service: DocumentsService;
@@ -19,6 +21,14 @@ describe('DocumentsService', () => {
         },
         {
           provide: getRepositoryToken(Transaction),
+          useClass: Repository,
+        },
+        {
+          provide: getRepositoryToken(Project),
+          useClass: Repository,
+        },
+        {
+          provide: getRepositoryToken(Vendor),
           useClass: Repository,
         },
         StorageService,

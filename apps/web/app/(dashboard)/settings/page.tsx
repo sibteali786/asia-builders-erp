@@ -20,6 +20,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { useEffect } from "react";
 
 const settingsSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -38,6 +39,11 @@ function SettingsForm({ me }: { me: AuthUser }) {
   const updateProfile = useUpdateMyProfile();
   const uploadAvatar = useUploadMyAvatar();
 
+  useEffect(() => {
+    if (me && token) {
+      setAuth(me, token);
+    }
+  }, [me]);
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
