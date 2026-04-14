@@ -1,0 +1,159 @@
+# TypeScript & Code Style
+
+## TypeScript Rules
+
+### No `any` — Use Proper Types
+
+```typescript
+// Bad
+function processData(data: any) { ... }
+
+// Good — define the interface
+interface TransactionData {
+  id: string;
+  amount: number;
+  type: 'EXPENSE' | 'INCOME';
+}
+function processData(data: TransactionData) { ... }
+
+// Good — use unknown and narrow
+function processUnknown(data: unknown) {
+  if (typeof data === 'string') { ... }
+}
+```
+
+### Consistent Type Imports
+
+```typescript
+// Use type imports for type-only imports
+import type { Project } from "@/types/project.types";
+import type { Repository } from "typeorm";
+
+// Regular import for values + types mixed
+import { ProjectStatus } from "./entities/project.entity";
+```
+
+### Interfaces vs Types
+
+- Use `interface` for object shapes (entities, DTOs, props)
+- Use `type` for unions, intersections, mapped types
+
+```typescript
+// Good — interface for object shapes
+interface ProjectCardProps {
+  project: Project;
+  onDelete?: (id: string) => void;
+}
+
+// Good — type for unions
+type ProjectStatus = "ACTIVE" | "COMPLETED" | "ON_HOLD" | "CANCELLED";
+```
+
+## Prettier Config
+
+Both apps use Prettier with these settings:
+
+```json
+{
+  "singleQuote": true,
+  "trailingComma": "all",
+  "printWidth": 100,
+  "tabWidth": 2,
+  "semi": true
+}
+```
+
+Format is enforced via lint-staged on every commit.
+
+## Import Order
+
+Organize imports in this order (Prettier will handle formatting):
+
+1. Node/third-party modules
+2. Next.js / NestJS internals
+3. Local absolute imports (`@/lib/...`, `@/components/...`)
+4. Relative imports (`./`, `../`)
+5. Type-only imports
+
+## React Component Structure
+
+```typescript
+'use client'; // Only if needed — must be first line
+
+import { useState } from 'react';
+import { useProjects } from '@/hooks/use-projects';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+// Props interface above component
+interface ProjectCardProps {
+  project: Project;
+  className?: string;
+}
+
+// Named export preferred (not default export, except for pages)
+export function ProjectCard({ project, className }: ProjectCardProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  function handleDelete() {
+    // ...
+  }
+
+  return (
+    <div className={cn('rounded-lg border p-4', className)}>
+      {/* ... */}
+    </div>
+  );
+}
+```
+
+## Async/Await Patterns
+
+```typescript
+// Always handle errors in mutations via React Query options
+const createProject = useCreateProject();
+
+async function handleSubmit(values: FormValues) {
+  try {
+    await createProject.mutateAsync(values);
+    toast.success("Project created");
+  } catch {
+    toast.error("Failed to create project");
+  }
+}
+
+// Or use onError callback
+createProject.mutate(values, {
+  onSuccess: () => toast.success("Done"),
+  onError: () => toast.error("Failed"),
+});
+```
+
+## Date Formatting
+
+```typescript
+import { format, formatDistanceToNow } from "date-fns";
+
+// Always use date-fns — never new Date().toLocaleDateString()
+format(new Date(dateString), "dd MMM yyyy");
+formatDistanceToNow(new Date(dateString), { addSuffix: true });
+```
+
+## Constants and Enums
+
+```typescript
+// Backend: Use TypeScript enums in entities
+export enum ProjectStatus {
+  ACTIVE = "ACTIVE",
+  COMPLETED = "COMPLETED",
+  ON_HOLD = "ON_HOLD",
+  CANCELLED = "CANCELLED",
+}
+
+// Frontend: Mirror as const objects or string unions (no runtime enum overhead)
+export const PROJECT_STATUS = {
+  ACTIVE: "ACTIVE",
+  COMPLETED: "COMPLETED",
+} as const;
+type ProjectStatus = (typeof PROJECT_STATUS)[keyof typeof PROJECT_STATUS];
+```
