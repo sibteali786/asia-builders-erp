@@ -10,7 +10,10 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { useDashboardProfitOverview } from "@/hooks/use-dashboard";
+import {
+  useDashboardProfitOverview,
+  type ProjectDashboardFilter,
+} from "@/hooks/use-dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -64,8 +67,15 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
 
 // ─── Section ──────────────────────────────────────────────────────────────────
 
-export function ProfitOverviewSection() {
-  const { data, isLoading, isError } = useDashboardProfitOverview();
+export interface ProfitOverviewSectionProps {
+  projectFilter: ProjectDashboardFilter;
+}
+
+export function ProfitOverviewSection({
+  projectFilter,
+}: ProfitOverviewSectionProps) {
+  const { data, isLoading, isError } =
+    useDashboardProfitOverview(projectFilter);
 
   // Shorten project names for X axis labels — bar chart has limited space
   // e.g. "Skyline Residency - Plot 930" → "Plot 930"

@@ -10,7 +10,10 @@ import {
   AlertCircle,
   Building2,
 } from "lucide-react";
-import { useDashboardStats } from "@/hooks/use-dashboard";
+import {
+  useDashboardStats,
+  type ProjectDashboardFilter,
+} from "@/hooks/use-dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -24,16 +27,14 @@ function formatCurrency(value: number): string {
 }
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
-// Reusable card — same bg-white rounded-xl border border-border p-5 pattern
-// used across ProjectHeader and ProjectStats
 
 interface StatCardProps {
   label: string;
   value: string;
   icon: React.ReactNode;
-  iconBg: string; // tailwind bg color class for icon circle
-  sub?: string; // small subtitle text below value
-  subColor?: string; // tailwind text color for sub
+  iconBg: string;
+  sub?: string;
+  subColor?: string;
 }
 
 function StatCard({
@@ -88,8 +89,18 @@ function StatCardSkeleton() {
 
 // ─── Section ──────────────────────────────────────────────────────────────────
 
-export function StatsSection() {
-  const { data, isLoading, isError } = useDashboardStats();
+export interface StatsSectionProps {
+  variant?: "owner" | "accountant";
+  projectFilter: ProjectDashboardFilter;
+}
+
+export function StatsSection({
+  variant = "owner",
+  projectFilter,
+}: StatsSectionProps) {
+  const { data, isLoading, isError } = useDashboardStats(projectFilter);
+
+  const skeletonCount = variant === "accountant" ? 4 : 8;
 
   if (isError) {
     return (
@@ -101,22 +112,68 @@ export function StatsSection() {
 
   if (isLoading || !data) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {Array.from({ length: 8 }).map((_, i) => (
+      <div
+        className={cn(
+          "grid gap-4",
+          variant === "accountant"
+            ? "grid-cols-2 md:grid-cols-4"
+            : "grid-cols-2 md:grid-cols-4",
+        )}
+      >
+        {Array.from({ length: skeletonCount }).map((_, i) => (
           <StatCardSkeleton key={i} />
         ))}
       </div>
     );
   }
 
+  if (variant === "accountant") {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Expenses"
+          value={formatCurrency(data.totalExpenses)}
+          icon={<TrendingDown size={14} className="text-red-500" />}
+          iconBg="bg-red-50"
+          sub="In selected projects"
+        />
+        <StatCard
+          label="Outstanding"
+          value={formatCurrency(data.outstandingAmount)}
+          icon={<AlertCircle size={14} className="text-orange-500" />}
+          iconBg="bg-orange-50"
+          sub={
+            data.outstandingVendorCount > 0
+              ? `${data.outstandingVendorCount} vendor${data.outstandingVendorCount > 1 ? "s" : ""} with DUE payments`
+              : "No pending payments"
+          }
+          subColor={
+            data.outstandingVendorCount > 0
+              ? "text-orange-500"
+              : "text-muted-foreground"
+          }
+        />
+        <StatCard
+          label="Active Projects"
+          value={String(data.activeProjects)}
+          icon={<FolderOpen size={14} className="text-[#C9A84C]" />}
+          iconBg="bg-amber-50"
+        />
+        <StatCard
+          label="Completed"
+          value={String(data.completedProjects)}
+          icon={<CheckCircle size={14} className="text-green-600" />}
+          iconBg="bg-green-50"
+        />
+      </div>
+    );
+  }
+
   const isProfit = data.netProfit >= 0;
 
-  // Row 1: financial KPIs
-  // Row 2: project count KPIs
   return (
     <div className="space-y-4">
-      {/* Row 1 — Money */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Total Investment"
           value={formatCurrency(data.totalInvestment)}
@@ -130,14 +187,14 @@ export function StatsSection() {
           value={formatCurrency(data.totalExpenses)}
           icon={<TrendingDown size={14} className="text-red-500" />}
           iconBg="bg-red-50"
-          sub="Across all projects"
+          sub="Across selected projects"
         />
         <StatCard
           label="Total Revenue"
           value={formatCurrency(data.totalRevenue)}
           icon={<DollarSign size={14} className="text-green-600" />}
           iconBg="bg-green-50"
-          sub="Across all projects"
+          sub="Across selected projects"
         />
         <StatCard
           label="Net Profit"
@@ -157,8 +214,7 @@ export function StatsSection() {
         />
       </div>
 
-      {/* Row 2 — Project counts */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Active Projects"
           value={String(data.activeProjects)}

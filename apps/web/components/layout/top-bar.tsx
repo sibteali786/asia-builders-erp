@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "../ui/sidebar";
+import { useAuthStore } from "@/store/auth.store";
 
 // Maps URL paths to human-readable page titles shown in the TopBar.
 // Extend this as you add more screens.
@@ -27,9 +28,17 @@ function getTitle(pathname: string): string {
   return PAGE_TITLES[base] ?? "Asia Builders";
 }
 
+function homeTitleByRole(role: string | undefined): string {
+  if (role === "ACCOUNTANT") return "Accountant Dashboard";
+  if (role === "OWNER") return "Owner Dashboard";
+  return "Dashboard";
+}
+
 export function TopBar() {
   const pathname = usePathname();
-  const title = getTitle(pathname);
+  const user = useAuthStore((s) => s.user);
+  const baseTitle = getTitle(pathname);
+  const title = pathname === "/" ? homeTitleByRole(user?.role) : baseTitle;
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6">

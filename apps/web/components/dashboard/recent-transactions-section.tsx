@@ -2,18 +2,17 @@
 
 import Link from "next/link";
 import { ArrowRight, TrendingUp, TrendingDown, Paperclip } from "lucide-react";
-import { useGlobalTransactions } from "@/hooks/use-transactions";
+import {
+  useDashboardRecentTransactions,
+  type ProjectDashboardFilter,
+} from "@/hooks/use-dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function formatCurrency(value: number): string {
   return `PKR ${Math.abs(value).toLocaleString()}`;
 }
-
-// ─── Row ──────────────────────────────────────────────────────────────────────
 
 interface TransactionRowProps {
   description: string;
@@ -36,7 +35,6 @@ function TransactionRow({
 
   return (
     <div className="flex items-center gap-3 py-3 border-b border-border last:border-0">
-      {/* Icon */}
       <div
         className={cn(
           "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
@@ -50,7 +48,6 @@ function TransactionRow({
         )}
       </div>
 
-      {/* Description + project */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-foreground truncate">
           {description}
@@ -58,7 +55,6 @@ function TransactionRow({
         <p className="text-xs text-muted-foreground truncate">{projectName}</p>
       </div>
 
-      {/* File indicator */}
       {fileCount > 0 && (
         <div className="flex items-center gap-0.5 text-xs text-muted-foreground">
           <Paperclip size={11} />
@@ -66,7 +62,6 @@ function TransactionRow({
         </div>
       )}
 
-      {/* Date + amount */}
       <div className="text-right shrink-0">
         <p
           className={cn(
@@ -88,7 +83,7 @@ function TransactionRow({
 function TransactionRowSkeleton() {
   return (
     <div className="flex items-center gap-3 py-3 border-b border-border last:border-0">
-      <Skeleton className="w-8 h-8 rounded-full shrink-0" />
+      <Skeleton className="h-8 w-8 rounded-full shrink-0" />
       <div className="flex-1 space-y-1.5">
         <Skeleton className="h-3.5 w-40" />
         <Skeleton className="h-3 w-24" />
@@ -101,18 +96,20 @@ function TransactionRowSkeleton() {
   );
 }
 
-// ─── Section ──────────────────────────────────────────────────────────────────
-// Reuses useGlobalTransactions with limit=5 — no new endpoint needed
+export interface RecentTransactionsSectionProps {
+  projectFilter: ProjectDashboardFilter;
+}
 
-export function RecentTransactionsSection() {
-  const { data, isLoading, isError } = useGlobalTransactions({ page: 1 });
+export function RecentTransactionsSection({
+  projectFilter,
+}: RecentTransactionsSectionProps) {
+  const { data, isLoading, isError } =
+    useDashboardRecentTransactions(projectFilter);
 
-  // Take only first 5 from the paginated response
-  const transactions = data?.data?.slice(0, 5) ?? [];
+  const transactions = data?.slice(0, 5) ?? [];
 
   return (
     <div className="bg-white rounded-xl border border-border p-5 flex flex-col gap-1">
-      {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-sm font-semibold text-foreground">
           Recent Transactions
@@ -125,14 +122,12 @@ export function RecentTransactionsSection() {
         </Link>
       </div>
 
-      {/* Error */}
       {isError && (
         <p className="text-sm text-destructive py-4 text-center">
           Failed to load transactions.
         </p>
       )}
 
-      {/* Loading */}
       {isLoading && (
         <div>
           {Array.from({ length: 5 }).map((_, i) => (
@@ -141,14 +136,12 @@ export function RecentTransactionsSection() {
         </div>
       )}
 
-      {/* Empty */}
       {!isLoading && !isError && transactions.length === 0 && (
         <p className="text-sm text-muted-foreground py-6 text-center">
           No transactions yet.
         </p>
       )}
 
-      {/* Rows */}
       {!isLoading && !isError && transactions.length > 0 && (
         <div>
           {transactions.map((tx) => (

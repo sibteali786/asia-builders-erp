@@ -1,56 +1,59 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { DashboardService } from './dashboard.service';
+import { QueryDashboardDto } from './dto/query-dashboard.dto';
 
-// @Controller('dashboard') means all routes here start with /dashboard
-// @UseGuards(JwtAuthGuard) means every route requires a valid JWT token
 @ApiTags('Dashboard')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('dashboard')
 export class DashboardController {
-  // NestJS injects DashboardService here automatically (Dependency Injection)
   constructor(private readonly dashboardService: DashboardService) {}
 
-  // GET /dashboard/stats
   @ApiOperation({
     summary: 'KPI cards — project counts, revenue, expenses, outstanding',
+    description: 'Optional projectFilter scopes metrics to matching projects.',
   })
   @Get('stats')
-  getStats() {
-    return this.dashboardService.getStats();
+  getStats(@Query() query: QueryDashboardDto) {
+    return this.dashboardService.getStats(query.projectFilter);
   }
 
-  // GET /dashboard/active-projects
   @ApiOperation({
-    summary: 'Active project cards with total spent and top vendor',
+    summary: 'Project cards for dashboard (status depends on projectFilter)',
   })
   @Get('active-projects')
-  getActiveProjects() {
-    return this.dashboardService.getActiveProjects();
+  getActiveProjects(@Query() query: QueryDashboardDto) {
+    return this.dashboardService.getDashboardProjects(query.projectFilter);
   }
 
-  // GET /dashboard/upcoming-payments
-  @ApiOperation({ summary: 'DUE transactions grouped by vendor' })
+  @ApiOperation({ summary: 'DUE transactions grouped by vendor (scoped)' })
   @Get('upcoming-payments')
-  getUpcomingPayments() {
-    return this.dashboardService.getUpcomingPayments();
+  getUpcomingPayments(@Query() query: QueryDashboardDto) {
+    return this.dashboardService.getUpcomingPayments(query.projectFilter);
   }
 
-  // GET /dashboard/expense-breakdown
-  @ApiOperation({ summary: 'Expense totals per category for donut chart' })
+  @ApiOperation({ summary: 'Expense totals per category (scoped)' })
   @Get('expense-breakdown')
-  getExpenseBreakdown() {
-    return this.dashboardService.getExpenseBreakdown();
+  getExpenseBreakdown(@Query() query: QueryDashboardDto) {
+    return this.dashboardService.getExpenseBreakdown(query.projectFilter);
   }
 
-  // GET /dashboard/profit-overview
   @ApiOperation({
-    summary: 'Per-project profit for completed/sold projects bar chart',
+    summary: 'Per-project profit for completed/sold projects',
+    description: 'Empty when projectFilter=active.',
   })
   @Get('profit-overview')
-  getProfitOverview() {
-    return this.dashboardService.getProfitOverview();
+  getProfitOverview(@Query() query: QueryDashboardDto) {
+    return this.dashboardService.getProfitOverview(query.projectFilter);
+  }
+
+  @ApiOperation({
+    summary: 'Latest transactions for dashboard widget (scoped)',
+  })
+  @Get('recent-transactions')
+  getRecentTransactions(@Query() query: QueryDashboardDto) {
+    return this.dashboardService.getRecentTransactions(query.projectFilter);
   }
 }

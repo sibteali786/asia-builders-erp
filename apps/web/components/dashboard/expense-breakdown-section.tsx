@@ -1,14 +1,10 @@
 "use client";
 
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts";
-import { useDashboardExpenseBreakdown } from "@/hooks/use-dashboard";
+  useDashboardExpenseBreakdown,
+  type ProjectDashboardFilter,
+} from "@/hooks/use-dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // ─── Chart colors ─────────────────────────────────────────────────────────────
@@ -85,8 +81,15 @@ function ChartLegend({ items }: { items: LegendItem[] }) {
 
 // ─── Section ──────────────────────────────────────────────────────────────────
 
-export function ExpenseBreakdownSection() {
-  const { data, isLoading, isError } = useDashboardExpenseBreakdown();
+export interface ExpenseBreakdownSectionProps {
+  projectFilter: ProjectDashboardFilter;
+}
+
+export function ExpenseBreakdownSection({
+  projectFilter,
+}: ExpenseBreakdownSectionProps) {
+  const { data, isLoading, isError } =
+    useDashboardExpenseBreakdown(projectFilter);
 
   // Attach color + percentage to each item for legend and chart
   const total = data?.reduce((sum, item) => sum + item.total, 0) ?? 0;

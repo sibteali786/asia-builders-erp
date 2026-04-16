@@ -1,17 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { Project, ProjectStatus } from '../projects/entities/project.entity';
 import {
   Transaction,
   TransactionType,
 } from '../transactions/entities/transaction.entity';
-import { ProjectVendor } from '../vendors/entities/project-vendor.entity';
-import { TransactionCategory } from '../transactions/entities/transaction-category.entity';
+import { ProjectDashboardFilter } from './dto/query-dashboard.dto';
 
 // ─── Raw query result interfaces ─────────────────────────────────────────────
-// These mirror exactly what PostgreSQL returns from getRawMany()/getRawOne().
-// All numeric columns come back as strings from pg driver — we Number() them in .map()
 
 interface RawStatusCount {
   status: ProjectStatus;
@@ -59,6 +56,18 @@ interface RawProfitOverview {
   expenses: string;
 }
 
+interface RawRecentTx {
+  id: string;
+  transactionType: TransactionType;
+  transactionDate: Date;
+  description: string;
+  amount: string;
+  status: string;
+  fileCount: string;
+  projectId: string;
+  projectName: string;
+}
+
 @Injectable()
 export class DashboardService {
   constructor(
@@ -67,20 +76,42 @@ export class DashboardService {
 
     @InjectRepository(Transaction)
     private txRepo: Repository<Transaction>,
-
-    @InjectRepository(ProjectVendor)
-    private projectVendorRepo: Repository<ProjectVendor>,
-
-    @InjectRepository(TransactionCategory)
-    private categoryRepo: Repository<TransactionCategory>,
   ) {}
 
-  async getStats() {
-    const statusCounts = await this.projectRepo
+  private normalizeFilter(
+    filter?: ProjectDashboardFilter,
+  ): ProjectDashboardFilter {
+    return filter ?? ProjectDashboardFilter.ALL;
+  }
+
+  /** Restrict rows to projects matching the dashboard tab (ON_HOLD never matches Active). */
+  private scopeProjectOnAlias(
+    qb: SelectQueryBuilder<object>,
+    alias: string,
+    filter: ProjectDashboardFilter,
+  ): void {
+    if (filter === ProjectDashboardFilter.ALL) return;
+    if (filter === ProjectDashboardFilter.ACTIVE) {
+      qb.andWhere(`${alias}.status = :_dsActive`, {
+        _dsActive: ProjectStatus.ACTIVE,
+      });
+    } else {
+      qb.andWhere(`${alias}.status IN (:..._dsDone)`, {
+        _dsDone: [ProjectStatus.COMPLETED, ProjectStatus.SOLD],
+      });
+    }
+  }
+
+  async getStats(projectFilter?: ProjectDashboardFilter) {
+    const filter = this.normalizeFilter(projectFilter);
+
+    const statusQb = this.projectRepo
       .createQueryBuilder('p')
       .select('p.status', 'status')
       .addSelect('COUNT(p.id)', 'count')
-      .where('p.deleted_at IS NULL')
+      .where('p.deleted_at IS NULL');
+    this.scopeProjectOnAlias(statusQb, 'p', filter);
+    const statusCounts = await statusQb
       .groupBy('p.status')
       .getRawMany<RawStatusCount>();
 
@@ -92,13 +123,15 @@ export class DashboardService {
       {} as Record<string, number>,
     );
 
-    const txSums = await this.txRepo
+    const txQb = this.txRepo
       .createQueryBuilder('t')
+      .innerJoin('t.project', 'p')
       .select('t.transaction_type', 'type')
       .addSelect('COALESCE(SUM(t.amount), 0)', 'total')
-      .where('t.deleted_at IS NULL')
-      .groupBy('t.transaction_type')
-      .getRawMany<RawTxSum>();
+      .where('t.deleted_at IS NULL AND p.deleted_at IS NULL')
+      .groupBy('t.transaction_type');
+    this.scopeProjectOnAlias(txQb, 'p', filter);
+    const txSums = await txQb.getRawMany<RawTxSum>();
 
     const byType = txSums.reduce(
       (acc, row) => {
@@ -108,18 +141,22 @@ export class DashboardService {
       {} as Record<string, number>,
     );
 
-    const outstandingResult = await this.txRepo
+    const outQb = this.txRepo
       .createQueryBuilder('t')
+      .innerJoin('t.project', 'p')
       .select('COALESCE(SUM(t.amount), 0)', 'total')
       .addSelect('COUNT(DISTINCT t.vendor_id)', 'vendorCount')
-      .where("t.status = 'DUE' AND t.deleted_at IS NULL")
-      .getRawOne<RawOutstanding>();
+      .where(
+        "t.status = 'DUE' AND t.deleted_at IS NULL AND p.deleted_at IS NULL",
+      );
+    this.scopeProjectOnAlias(outQb, 'p', filter);
+    const outstandingResult = await outQb.getRawOne<RawOutstanding>();
 
     const totalRevenue = byType[TransactionType.INCOME] ?? 0;
     const totalExpenses = byType[TransactionType.EXPENSE] ?? 0;
 
     return {
-      totalInvestment: 0, // placeholder until investments module is built
+      totalInvestment: 0,
       totalExpenses,
       totalRevenue,
       netProfit: totalRevenue - totalExpenses,
@@ -131,8 +168,13 @@ export class DashboardService {
     };
   }
 
-  async getActiveProjects() {
-    const rows = await this.projectRepo
+  async getDashboardProjects(projectFilter?: ProjectDashboardFilter) {
+    const filter = this.normalizeFilter(projectFilter);
+
+    // date - date → integer days in PostgreSQL; never use EXTRACT(DAY FROM …) on that (it errors).
+    const activeDaysExpr = `GREATEST(0, CASE WHEN p.status IN ('COMPLETED','SOLD') THEN (COALESCE(p.completion_date, CURRENT_DATE) - p.start_date) ELSE (CURRENT_DATE - p.start_date) END)`;
+
+    const qb = this.projectRepo
       .createQueryBuilder('p')
       .leftJoin(
         'p.transactions',
@@ -146,7 +188,7 @@ export class DashboardService {
         'p.status       AS status',
         'p.start_date   AS "startDate"',
         'COALESCE(SUM(t.amount), 0) AS "totalSpent"',
-        `EXTRACT(DAY FROM NOW() - p.start_date)::int AS "activeDays"`,
+        `${activeDaysExpr} AS "activeDays"`,
         `(
           SELECT v.name FROM transactions t2
           JOIN vendors v ON v.id = t2.vendor_id
@@ -159,10 +201,26 @@ export class DashboardService {
           LIMIT 1
         ) AS "topVendorName"`,
       ])
-      .where("p.status = 'ACTIVE' AND p.deleted_at IS NULL")
-      .groupBy('p.id')
-      .orderBy('p.start_date', 'DESC')
-      .getRawMany<RawActiveProject>();
+      .where('p.deleted_at IS NULL')
+      .groupBy('p.id');
+
+    if (filter === ProjectDashboardFilter.ACTIVE) {
+      qb.andWhere("p.status = 'ACTIVE'");
+    } else if (filter === ProjectDashboardFilter.COMPLETED) {
+      qb.andWhere("p.status IN ('COMPLETED','SOLD')");
+    }
+
+    if (filter === ProjectDashboardFilter.COMPLETED) {
+      qb.orderBy('p.completion_date', 'DESC', 'NULLS LAST');
+    } else if (filter === ProjectDashboardFilter.ALL) {
+      qb.orderBy('p.updated_at', 'DESC');
+    } else {
+      qb.orderBy('p.start_date', 'DESC');
+    }
+
+    qb.take(12);
+
+    const rows = await qb.getRawMany<RawActiveProject>();
 
     return rows.map((r) => ({
       id: Number(r.id),
@@ -176,9 +234,12 @@ export class DashboardService {
     }));
   }
 
-  async getUpcomingPayments() {
-    const rows = await this.txRepo
+  async getUpcomingPayments(projectFilter?: ProjectDashboardFilter) {
+    const filter = this.normalizeFilter(projectFilter);
+
+    const qb = this.txRepo
       .createQueryBuilder('t')
+      .innerJoin('t.project', 'p')
       .leftJoin('t.vendor', 'v')
       .select([
         't.vendor_id                      AS "vendorId"',
@@ -186,11 +247,15 @@ export class DashboardService {
         'COALESCE(SUM(t.amount), 0)       AS "totalDue"',
         'COUNT(t.id)                      AS "transactionCount"',
       ])
-      .where("t.status = 'DUE' AND t.deleted_at IS NULL")
+      .where(
+        "t.status = 'DUE' AND t.deleted_at IS NULL AND p.deleted_at IS NULL",
+      )
       .groupBy('t.vendor_id, v.name')
       .orderBy('"totalDue"', 'DESC')
-      .limit(10)
-      .getRawMany<RawUpcomingPayment>();
+      .limit(10);
+    this.scopeProjectOnAlias(qb, 'p', filter);
+
+    const rows = await qb.getRawMany<RawUpcomingPayment>();
 
     return rows.map((r) => ({
       vendorId: r.vendorId ? Number(r.vendorId) : null,
@@ -200,18 +265,25 @@ export class DashboardService {
     }));
   }
 
-  async getExpenseBreakdown() {
-    const rows = await this.txRepo
+  async getExpenseBreakdown(projectFilter?: ProjectDashboardFilter) {
+    const filter = this.normalizeFilter(projectFilter);
+
+    const qb = this.txRepo
       .createQueryBuilder('t')
+      .innerJoin('t.project', 'p')
       .leftJoin('t.category', 'c')
       .select([
         'COALESCE(c.name, \'Uncategorized\') AS "categoryName"',
         'COALESCE(SUM(t.amount), 0)        AS total',
       ])
-      .where("t.transaction_type = 'EXPENSE' AND t.deleted_at IS NULL")
+      .where(
+        "t.transaction_type = 'EXPENSE' AND t.deleted_at IS NULL AND p.deleted_at IS NULL",
+      )
       .groupBy('c.name')
-      .orderBy('total', 'DESC')
-      .getRawMany<RawExpenseBreakdown>();
+      .orderBy('total', 'DESC');
+    this.scopeProjectOnAlias(qb, 'p', filter);
+
+    const rows = await qb.getRawMany<RawExpenseBreakdown>();
 
     return rows.map((r) => ({
       categoryName: r.categoryName,
@@ -219,8 +291,14 @@ export class DashboardService {
     }));
   }
 
-  async getProfitOverview() {
-    const rows = await this.projectRepo
+  async getProfitOverview(projectFilter?: ProjectDashboardFilter) {
+    const filter = this.normalizeFilter(projectFilter);
+
+    if (filter === ProjectDashboardFilter.ACTIVE) {
+      return [];
+    }
+
+    const qb = this.projectRepo
       .createQueryBuilder('p')
       .select([
         'p.id     AS id',
@@ -241,8 +319,11 @@ export class DashboardService {
       ])
       .where("p.status IN ('COMPLETED', 'SOLD') AND p.deleted_at IS NULL")
       .orderBy('p.completion_date', 'DESC')
-      .limit(6)
-      .getRawMany<RawProfitOverview>();
+      .limit(6);
+
+    this.scopeProjectOnAlias(qb, 'p', filter);
+
+    const rows = await qb.getRawMany<RawProfitOverview>();
 
     return rows.map((r) => ({
       id: Number(r.id),
@@ -252,5 +333,51 @@ export class DashboardService {
       expenses: Number(r.expenses),
       profit: Number(r.revenue) - Number(r.expenses),
     }));
+  }
+
+  async getRecentTransactions(projectFilter?: ProjectDashboardFilter) {
+    const filter = this.normalizeFilter(projectFilter);
+
+    const qb = this.txRepo
+      .createQueryBuilder('t')
+      .innerJoin('t.project', 'p')
+      .where('t.deleted_at IS NULL AND p.deleted_at IS NULL')
+      .orderBy('t.transaction_date', 'DESC')
+      .addOrderBy('t.created_at', 'DESC')
+      .take(10)
+      .select([
+        't.id                        AS id',
+        't.transaction_type          AS "transactionType"',
+        't.transaction_date          AS "transactionDate"',
+        't.description               AS description',
+        't.amount                    AS amount',
+        't.status                    AS status',
+        'p.id                        AS "projectId"',
+        'p.name                      AS "projectName"',
+        `(SELECT COUNT(*) FROM documents d
+          WHERE d.entity_type = 'TRANSACTION'
+          AND d.entity_id = t.id
+          AND d.deleted_at IS NULL) AS "fileCount"`,
+      ]);
+    this.scopeProjectOnAlias(qb, 'p', filter);
+
+    const rows = await qb.getRawMany<RawRecentTx>();
+
+    return rows.map((r) => {
+      const amount =
+        r.transactionType === TransactionType.EXPENSE
+          ? -Math.abs(Number(r.amount))
+          : Math.abs(Number(r.amount));
+      return {
+        id: Number(r.id),
+        transactionType: r.transactionType,
+        transactionDate: r.transactionDate,
+        description: r.description,
+        amount,
+        status: r.status as 'PAID' | 'DUE',
+        fileCount: Number(r.fileCount ?? 0),
+        project: { id: Number(r.projectId), name: r.projectName },
+      };
+    });
   }
 }

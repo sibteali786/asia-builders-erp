@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { MapPin, Calendar, Clock, ArrowRight } from "lucide-react";
-import { useDashboardActiveProjects } from "@/hooks/use-dashboard";
+import {
+  useDashboardActiveProjects,
+  type ProjectDashboardFilter,
+} from "@/hooks/use-dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+import { cn } from "@/lib/utils";
 
 function formatCurrency(value: number): string {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
@@ -14,12 +16,42 @@ function formatCurrency(value: number): string {
   return value.toLocaleString();
 }
 
-// ─── Project Card ─────────────────────────────────────────────────────────────
+function statusBadgeClass(status: string): string {
+  switch (status) {
+    case "ACTIVE":
+      return "bg-green-50 text-green-700 border-green-200";
+    case "ON_HOLD":
+      return "bg-amber-50 text-amber-800 border-amber-200";
+    case "COMPLETED":
+      return "bg-blue-50 text-blue-700 border-blue-200";
+    case "SOLD":
+      return "bg-purple-50 text-purple-700 border-purple-200";
+    default:
+      return "bg-muted text-muted-foreground border-border";
+  }
+}
+
+function statusLabel(status: string): string {
+  return status.replace(/_/g, " ");
+}
+
+function sectionHeading(filter: ProjectDashboardFilter): string {
+  if (filter === "completed") return "Completed Projects";
+  if (filter === "active") return "Active Projects";
+  return "Projects";
+}
+
+function emptyMessage(filter: ProjectDashboardFilter): string {
+  if (filter === "completed") return "No completed projects in this scope.";
+  if (filter === "active") return "No active projects at the moment.";
+  return "No projects yet.";
+}
 
 interface ActiveProjectCardProps {
   id: number;
   name: string;
   location: string;
+  status: string;
   startDate: string;
   totalSpent: number;
   activeDays: number;
@@ -30,34 +62,38 @@ function ActiveProjectCard({
   id,
   name,
   location,
+  status,
   startDate,
   totalSpent,
   activeDays,
   topVendorName,
 }: ActiveProjectCardProps) {
+  const isClosed = status === "COMPLETED" || status === "SOLD";
+
   return (
-    // Entire card is a link to the project detail page
     <Link
       href={`/projects/${id}`}
       className="bg-white rounded-xl border border-border p-5 flex flex-col gap-4 hover:border-[#C9A84C]/50 hover:shadow-sm transition-all"
     >
-      {/* Header: name + status badge */}
       <div className="flex items-start justify-between gap-2">
         <h3 className="font-semibold text-foreground text-sm leading-snug line-clamp-2">
           {name}
         </h3>
-        <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
-          ACTIVE
+        <span
+          className={cn(
+            "shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full border uppercase tracking-wide",
+            statusBadgeClass(status),
+          )}
+        >
+          {statusLabel(status)}
         </span>
       </div>
 
-      {/* Location */}
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <MapPin size={11} className="shrink-0" />
         <span className="truncate">{location}</span>
       </div>
 
-      {/* Stats row */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
@@ -80,11 +116,12 @@ function ActiveProjectCard({
         </div>
       </div>
 
-      {/* Footer: active days + top vendor */}
       <div className="flex items-center justify-between pt-2 border-t border-border text-xs text-muted-foreground">
         <div className="flex items-center gap-1">
           <Clock size={11} />
-          <span>Active for {activeDays} days</span>
+          <span>
+            {isClosed ? "Ran for" : "Active for"} {activeDays} days
+          </span>
         </div>
         {topVendorName && (
           <span className="truncate max-w-[120px]">Top: {topVendorName}</span>
@@ -120,34 +157,38 @@ function ActiveProjectCardSkeleton() {
   );
 }
 
-// ─── Section ──────────────────────────────────────────────────────────────────
+export interface ActiveProjectsSectionProps {
+  projectFilter: ProjectDashboardFilter;
+}
 
-export function ActiveProjectsSection() {
-  const { data, isLoading, isError } = useDashboardActiveProjects();
+export function ActiveProjectsSection({
+  projectFilter,
+}: ActiveProjectsSectionProps) {
+  const { data, isLoading, isError } =
+    useDashboardActiveProjects(projectFilter);
+
+  const heading = sectionHeading(projectFilter);
 
   return (
     <div className="space-y-3">
-      {/* Section header */}
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">
-          Active Projects
+          {heading}
         </h2>
         <Link
-          href="/projects?status=ACTIVE"
+          href="/projects"
           className="flex items-center gap-1 text-xs text-[#C9A84C] hover:underline font-medium"
         >
           View All <ArrowRight size={12} />
         </Link>
       </div>
 
-      {/* Error state */}
       {isError && (
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-          Failed to load active projects.
+          Failed to load projects.
         </div>
       )}
 
-      {/* Loading state — 3 skeleton cards */}
       {isLoading && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -156,17 +197,15 @@ export function ActiveProjectsSection() {
         </div>
       )}
 
-      {/* Empty state */}
       {!isLoading && !isError && data?.length === 0 && (
         <div className="bg-white rounded-xl border border-border p-8 text-center text-sm text-muted-foreground">
-          No active projects at the moment.
+          {emptyMessage(projectFilter)}
         </div>
       )}
 
-      {/* Cards */}
       {!isLoading && !isError && data && data.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {data.map((project) => (
+          {data.slice(0, 3).map((project) => (
             <ActiveProjectCard key={project.id} {...project} />
           ))}
         </div>

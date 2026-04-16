@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { ArrowRight, AlertCircle, Clock } from "lucide-react";
-import { useDashboardUpcomingPayments } from "@/hooks/use-dashboard";
+import {
+  useDashboardUpcomingPayments,
+  type ProjectDashboardFilter,
+} from "@/hooks/use-dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -86,8 +89,15 @@ function PaymentRowSkeleton() {
 
 // ─── Section ──────────────────────────────────────────────────────────────────
 
-export function UpcomingPaymentsSection() {
-  const { data, isLoading, isError } = useDashboardUpcomingPayments();
+export interface UpcomingPaymentsSectionProps {
+  projectFilter: ProjectDashboardFilter;
+}
+
+export function UpcomingPaymentsSection({
+  projectFilter,
+}: UpcomingPaymentsSectionProps) {
+  const { data, isLoading, isError } =
+    useDashboardUpcomingPayments(projectFilter);
 
   // Total outstanding across all DUE vendors
   const totalOutstanding = data?.reduce((sum, p) => sum + p.totalDue, 0) ?? 0;

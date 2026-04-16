@@ -1,0 +1,46 @@
+# Project Architecture
+
+This is a **Turborepo monorepo** using PNPM workspaces.
+
+## Structure
+
+- `apps/web` — Next.js 16 + React 19, App Router, TypeScript (port 3000)
+- `apps/api` — NestJS 11 + Express, TypeScript (port 3001)
+- `packages/shared-types` — shared TypeScript interfaces (expand this when adding shared types)
+- `packages/utils` — shared utility functions
+
+## Key Architectural Decisions
+
+### Authentication Flow
+
+1. User logs in → NestJS returns `{ user, token }`
+2. Zustand stores both in a JS-accessible cookie (7-day expiry, SameSite=Strict)
+3. Axios request interceptor reads token from Zustand and adds `Authorization: Bearer {token}`
+4. Next.js middleware checks for the cookie before rendering protected routes
+5. 401 response → Axios interceptor clears Zustand store + redirects to `/login`
+
+### Data Flow
+
+- **Frontend → Backend**: Axios (`lib/axios.ts`) → NestJS REST API → TypeORM → PostgreSQL
+- **File Storage**: NestJS `StorageService` → Cloudflare R2 (S3-compatible, not AWS)
+- **Auth**: Passport JWT strategy on all protected NestJS controllers
+
+### State Layers
+
+| Layer          | Tool        | What Lives Here                                   |
+| -------------- | ----------- | ------------------------------------------------- |
+| Server state   | React Query | All API data (projects, vendors, transactions)    |
+| Auth state     | Zustand     | `user` object + JWT `token` (persisted to cookie) |
+| Local UI state | useState    | Modals, toggles, form steps                       |
+
+## Protected Routes
+
+- Frontend: `middleware.ts` checks for `auth` cookie
+- Backend: `@UseGuards(JwtAuthGuard)` on all controllers/routes that require authentication
+
+## Database
+
+- PostgreSQL running in Docker (`docker-compose.yml`)
+- TypeORM entities in `apps/api/src/modules/*/entities/`
+- Migrations in `apps/api/src/database/migrations/` — never edit existing migrations, always add new ones
+- All entities extend `SoftDeleteBaseEntity` (soft deletes via `deletedAt` column)
