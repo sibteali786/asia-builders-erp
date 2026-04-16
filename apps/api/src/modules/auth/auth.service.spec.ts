@@ -14,6 +14,7 @@ import {
   createMockRegisterDto,
   createMockUser,
 } from '../../test/fixtures/user.fixtures';
+import { StorageService } from '../../common/storage/storage.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -55,6 +56,10 @@ describe('AuthService', () => {
         {
           provide: BCRYPT_TOKEN,
           useValue: mockBcrypt,
+        },
+        {
+          provide: StorageService,
+          useClass: StorageService,
         },
       ],
     }).compile();

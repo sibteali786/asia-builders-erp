@@ -6,6 +6,7 @@ import { User } from '../users/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as types from '../../common/imports/types';
+import { StorageService } from '../../common/storage/storage.service';
 
 @Injectable()
 export class AuthService {
@@ -15,6 +16,7 @@ export class AuthService {
     private jwtService: JwtService,
     @Inject(types.BCRYPT_TOKEN)
     private readonly bcrypt: types.BcryptType,
+    private readonly storageService: StorageService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -44,7 +46,7 @@ export class AuthService {
     const token = this.generateToken(user);
 
     return {
-      user: this.sanitizeUser(user),
+      user: await this.sanitizeAndResolveAvatarUrl(user),
       token,
     };
   }
@@ -70,7 +72,7 @@ export class AuthService {
     const token = this.generateToken(user);
 
     return {
-      user: this.sanitizeUser(user),
+      user: await this.sanitizeAndResolveAvatarUrl(user),
       token,
     };
   }
@@ -101,5 +103,29 @@ export class AuthService {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash, ...sanitized } = user;
     return sanitized;
+  }
+
+  private async sanitizeAndResolveAvatarUrl(user: User) {
+    const sanitized = this.sanitizeUser(user);
+
+    if (!sanitized.avatarUrl) {
+      return sanitized;
+    }
+
+    if (
+      sanitized.avatarUrl.startsWith('http://') ||
+      sanitized.avatarUrl.startsWith('https://')
+    ) {
+      return sanitized;
+    }
+
+    try {
+      const signedUrl = await this.storageService.getSignedUrl(
+        sanitized.avatarUrl,
+      );
+      return { ...sanitized, avatarUrl: signedUrl };
+    } catch {
+      return sanitized;
+    }
   }
 }
