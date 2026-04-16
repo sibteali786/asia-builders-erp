@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { Phone, ArrowUpRight, Link2 } from "lucide-react";
 import { useProjectVendors } from "@/hooks/use-project-vendors";
 import { formatCurrency } from "@/lib/utils";
+import { AssignVendorModal } from "@/components/project-detail/assign-vendor-modal";
 
 function initials(name: string) {
   return name
@@ -15,6 +17,8 @@ function initials(name: string) {
 
 export function VendorsTab({ projectId }: { projectId: number }) {
   const { data: vendors, isLoading } = useProjectVendors(projectId);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const assignedVendorIds = vendors?.map((vendor) => vendor.vendorId) ?? [];
 
   if (isLoading)
     return (
@@ -80,12 +84,23 @@ export function VendorsTab({ projectId }: { projectId: number }) {
       ))}
 
       {/* Assign New Vendor placeholder */}
-      <div className="rounded-xl border border-dashed border-border p-5 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:bg-accent cursor-pointer transition-colors min-h-[11rem]">
+      <button
+        type="button"
+        onClick={() => setAssignOpen(true)}
+        className="rounded-xl border border-dashed border-border p-5 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:bg-accent cursor-pointer transition-colors min-h-44"
+      >
         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
           <Link2 size={16} />
         </span>
         <p className="text-sm font-medium">Assign New Vendor</p>
-      </div>
+      </button>
+
+      <AssignVendorModal
+        open={assignOpen}
+        onOpenChange={setAssignOpen}
+        projectId={projectId}
+        assignedVendorIds={assignedVendorIds}
+      />
     </div>
   );
 }
