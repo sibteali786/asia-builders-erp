@@ -1,3 +1,7 @@
+---
+globs: *.tsx,*.ts,*.js
+alwaysApply: false
+---
 # Frontend Patterns (apps/web)
 
 ## Tech Stack

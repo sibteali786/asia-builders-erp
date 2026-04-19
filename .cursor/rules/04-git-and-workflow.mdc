@@ -1,3 +1,7 @@
+---
+alwaysApply: false
+---
+
 # Git Workflow & Development Process
 
 ## Conventional Commits — Strictly Enforced
