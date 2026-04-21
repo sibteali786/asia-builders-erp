@@ -362,9 +362,25 @@ export function ProjectTransactionsView({
                 </div>
               )}
 
-              {/* Project variant: Debits / Credits / Net Flow */}
+              {/* Project variant: Paid / Outstanding / Debits / Credits / Net Flow */}
               {!vendorId && data?.totals && (
                 <div className="flex items-center gap-6 text-xs ml-auto">
+                  <div>
+                    <span className="text-muted-foreground uppercase tracking-wide font-semibold">
+                      Paid{" "}
+                    </span>
+                    <span className="text-green-600 font-bold">
+                      {formatCurrency(data.totals.paidAmount)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground uppercase tracking-wide font-semibold">
+                      Outstanding{" "}
+                    </span>
+                    <span className="text-[#C9A84C] font-bold">
+                      {formatCurrency(data.totals.dueAmount)}
+                    </span>
+                  </div>
                   <div>
                     <span className="text-muted-foreground uppercase tracking-wide font-semibold">
                       Total Debits{" "}
@@ -386,10 +402,16 @@ export function ProjectTransactionsView({
                       Net Flow{" "}
                     </span>
                     <span
-                      className={`font-bold ${data.totals.netFlow >= 0 ? "text-green-600" : "text-red-500"}`}
+                      className={`font-bold ${data.totals.totalCredits - data.totals.paidAmount >= 0 ? "text-green-600" : "text-red-500"}`}
                     >
-                      {data.totals.netFlow >= 0 ? "+" : "-"}
-                      {formatCurrency(data.totals.netFlow)}
+                      {data.totals.totalCredits - data.totals.paidAmount >= 0
+                        ? "+"
+                        : "-"}
+                      {formatCurrency(
+                        Math.abs(
+                          data.totals.totalCredits - data.totals.paidAmount,
+                        ),
+                      )}
                     </span>
                   </div>
                 </div>
