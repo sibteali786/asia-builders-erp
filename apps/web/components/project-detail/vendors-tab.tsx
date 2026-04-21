@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Phone, ArrowUpRight, Link2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useProjectVendors } from "@/hooks/use-project-vendors";
 import { formatCurrency } from "@/lib/utils";
 import { AssignVendorModal } from "@/components/project-detail/assign-vendor-modal";
@@ -16,6 +17,7 @@ function initials(name: string) {
 }
 
 export function VendorsTab({ projectId }: { projectId: number }) {
+  const router = useRouter();
   const { data: vendors, isLoading } = useProjectVendors(projectId);
   const [assignOpen, setAssignOpen] = useState(false);
   const assignedVendorIds = vendors?.map((vendor) => vendor.vendorId) ?? [];
@@ -58,6 +60,11 @@ export function VendorsTab({ projectId }: { projectId: number }) {
             <ArrowUpRight
               size={16}
               className="text-muted-foreground cursor-pointer hover:text-[#14181F]"
+              onClick={() =>
+                router.push(
+                  `/projects/${projectId}/vendors/${v.vendorId}/transactions`,
+                )
+              }
             />
           </div>
 
