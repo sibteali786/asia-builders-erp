@@ -331,14 +331,14 @@ export function ProjectTransactionsView({
               </p>
 
               {/* Vendor variant: Paid / Outstanding / Agreement Value */}
-              {vendorFooter && (
+              {vendorId && data?.totals && (
                 <div className="flex items-center gap-6 text-xs ml-auto">
                   <div>
                     <span className="text-muted-foreground uppercase tracking-wide font-semibold">
                       Paid{" "}
                     </span>
                     <span className="text-green-600 font-bold">
-                      {formatCurrency(vendorFooter.paid)}
+                      {formatCurrency(data.totals.paidAmount)}
                     </span>
                   </div>
                   <div>
@@ -346,22 +346,24 @@ export function ProjectTransactionsView({
                       Outstanding{" "}
                     </span>
                     <span className="text-[#C9A84C] font-bold">
-                      {formatCurrency(vendorFooter.outstanding)}
+                      {formatCurrency(data.totals.dueAmount)}
                     </span>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground uppercase tracking-wide font-semibold">
-                      Agreement Value{" "}
-                    </span>
-                    <span className="text-foreground font-bold">
-                      {formatCurrency(vendorFooter.contractAmount)}
-                    </span>
-                  </div>
+                  {vendorFooter && (
+                    <div>
+                      <span className="text-muted-foreground uppercase tracking-wide font-semibold">
+                        Agreement Value{" "}
+                      </span>
+                      <span className="text-foreground font-bold">
+                        {formatCurrency(vendorFooter.contractAmount)}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* Project variant: Debits / Credits / Net Flow */}
-              {!vendorFooter && data?.totals && (
+              {!vendorId && data?.totals && (
                 <div className="flex items-center gap-6 text-xs ml-auto">
                   <div>
                     <span className="text-muted-foreground uppercase tracking-wide font-semibold">

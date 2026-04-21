@@ -266,11 +266,16 @@ export class TransactionsService {
 
     const totals = data.reduce(
       (acc, t) => {
-        if (t.amount < 0) acc.totalDebits += Math.abs(t.amount);
-        else acc.totalCredits += t.amount;
+        if (t.amount < 0) {
+          acc.totalDebits += Math.abs(t.amount);
+          if (t.status === 'PAID') acc.paidAmount += Math.abs(t.amount);
+          else acc.dueAmount += Math.abs(t.amount);
+        } else {
+          acc.totalCredits += t.amount;
+        }
         return acc;
       },
-      { totalDebits: 0, totalCredits: 0 },
+      { totalDebits: 0, totalCredits: 0, paidAmount: 0, dueAmount: 0 },
     );
 
     return {

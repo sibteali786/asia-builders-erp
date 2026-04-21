@@ -82,7 +82,13 @@ export function useAllTransactions(
       const res = await apiClient.get<{
         data: Transaction[];
         meta: TransactionMeta;
-        totals: { totalDebits: number; totalCredits: number; netFlow: number };
+        totals: {
+          totalDebits: number;
+          totalCredits: number;
+          netFlow: number;
+          paidAmount: number;
+          dueAmount: number;
+        };
       }>(`/projects/${projectId}/transactions/all`, {
         params: {
           ...(params.page && { page: params.page }),
