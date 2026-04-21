@@ -25,6 +25,7 @@ interface VendorFooter {
 
 interface Props {
   projectId: number;
+  vendorId?: number; // if set, filters transactions to only this vendor
   projectName?: string; // shown in header subtitle
   backHref?: string; // if set, back button uses router.push; else router.back()
   backLabel?: string; // label next to back arrow
@@ -176,6 +177,7 @@ function Pagination({
 
 export function ProjectTransactionsView({
   projectId,
+  vendorId,
   projectName,
   backHref,
   backLabel = "Back",
@@ -192,6 +194,7 @@ export function ProjectTransactionsView({
     type,
     page,
     limit: 15,
+    vendorId,
   });
   const transactions = data?.data ?? [];
   const meta = data?.meta;

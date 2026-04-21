@@ -182,7 +182,7 @@ export class TransactionsService {
   ) {
     await this.assertProjectExists(projectId);
 
-    const { page = 1, limit = 15, type, search } = query;
+    const { page = 1, limit = 15, type, search, vendorId } = query;
     const skip = (page - 1) * limit;
 
     const qb = this.txRepo
@@ -214,6 +214,7 @@ export class TransactionsService {
       .offset(skip)
       .limit(limit);
 
+    if (vendorId) qb.andWhere('t.vendor_id = :vendorId', { vendorId });
     if (type) qb.andWhere('t.transaction_type = :type', { type });
     if (search) {
       qb.andWhere('(t.description ILIKE :q OR vendor.name ILIKE :q)', {
@@ -229,6 +230,7 @@ export class TransactionsService {
         projectId,
       });
 
+    if (vendorId) countQb.andWhere('t.vendor_id = :vendorId', { vendorId });
     if (type) countQb.andWhere('t.transaction_type = :type', { type });
     if (search) {
       countQb.andWhere('(t.description ILIKE :q OR vendor.name ILIKE :q)', {

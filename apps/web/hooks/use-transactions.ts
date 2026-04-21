@@ -73,6 +73,7 @@ export function useAllTransactions(
     limit?: number;
     search?: string;
     type?: string;
+    vendorId?: number;
   } = {},
 ) {
   return useQuery({
@@ -87,13 +88,14 @@ export function useAllTransactions(
           ...(params.page && { page: params.page }),
           ...(params.search && { search: params.search }),
           ...(params.type && { type: params.type }),
+          ...(params.vendorId && { vendorId: params.vendorId }),
           limit: params.limit ?? 15,
         },
       });
       return res.data;
     },
     enabled: !!projectId,
-    staleTime: 0, // Always fetch fresh data for the full list (no caching)
+    staleTime: 0,
   });
 }
 

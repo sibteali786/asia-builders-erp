@@ -52,4 +52,14 @@ export class QueryProjectTransactionsDto {
   @IsOptional()
   @IsInt()
   projectId?: number;
+
+  @ApiProperty({
+    required: false,
+    description: 'Vendor ID to filter transactions by vendor',
+    example: 5,
+  })
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt()
+  vendorId?: number;
 }
