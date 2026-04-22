@@ -10,6 +10,7 @@ import { TransactionsModule } from './modules/transactions/transactions.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { VendorsModule } from './modules/vendors/vendors.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { InvestmentsModule } from './modules/investments/investments.module';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     DocumentsModule,
     VendorsModule,
     DashboardModule,
-    // other modules will be added here as we build them
+    InvestmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
