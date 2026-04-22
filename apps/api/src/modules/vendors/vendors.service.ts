@@ -221,17 +221,16 @@ export class VendorsService {
     FROM transactions t2
     WHERE t2.vendor_id = v.id
       AND t2.transaction_type = 'EXPENSE'
+      AND t2.status = 'PAID'
       AND t2.deleted_at IS NULL
    )                                             AS "amountPaid"`,
-        `GREATEST(
-    COALESCE(SUM(DISTINCT pv.contract_amount), 0) -
-    (SELECT COALESCE(SUM(t2.amount), 0)
-     FROM transactions t2
-     WHERE t2.vendor_id = v.id
-       AND t2.transaction_type = 'EXPENSE'
-       AND t2.deleted_at IS NULL),
-    0
-  )                                              AS outstanding`,
+        `(SELECT COALESCE(SUM(t2.amount), 0)
+    FROM transactions t2
+    WHERE t2.vendor_id = v.id
+      AND t2.transaction_type = 'EXPENSE'
+      AND t2.status = 'DUE'
+      AND t2.deleted_at IS NULL
+   )                                             AS outstanding`,
         `JSON_AGG(
     DISTINCT JSONB_BUILD_OBJECT(
       'projectId',   p.id,
