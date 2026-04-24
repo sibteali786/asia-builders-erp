@@ -11,6 +11,7 @@ import { DocumentsModule } from './modules/documents/documents.module';
 import { VendorsModule } from './modules/vendors/vendors.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { InvestmentsModule } from './modules/investments/investments.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { InvestmentsModule } from './modules/investments/investments.module';
     VendorsModule,
     DashboardModule,
     InvestmentsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
