@@ -57,13 +57,13 @@ export default function InvestmentDetailPage({ params }: Props) {
           <TabsList className="bg-transparent p-0 border-b border-border rounded-none w-full justify-start gap-4 h-auto pb-3">
             <TabsTrigger
               value="overview"
-              className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:border-b-2 data-[state=active]:border-foreground rounded-none px-0 pb-1 text-sm text-muted-foreground"
+              className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:border-b-2 data-[state=active]:border-foreground px-0 py-4 text-sm text-muted-foreground"
             >
               Overview &amp; Performance
             </TabsTrigger>
             <TabsTrigger
               value="valuation"
-              className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:border-b-2 data-[state=active]:border-foreground rounded-none px-0 pb-1 text-sm text-muted-foreground"
+              className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:border-b-2 data-[state=active]:border-foreground px-0 py-4 text-sm text-muted-foreground"
             >
               Valuation History
             </TabsTrigger>
