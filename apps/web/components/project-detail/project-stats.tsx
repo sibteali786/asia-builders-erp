@@ -24,9 +24,7 @@ export function ProjectStats({ project }: { project: ProjectDetail }) {
           </span>
         </div>
         <p className="text-5xl font-bold text-[#14181F] mt-3">
-          {Number(project.totalSpent) > 100000
-            ? formatCurrency(project.totalSpent.slice(0, 5)) + "..."
-            : formatCurrency(project.totalSpent)}
+          {formatCurrency(project.totalSpent)}
         </p>
         <p className="text-sm text-muted-foreground mt-1">
           As of latest financial statement

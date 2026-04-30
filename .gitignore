@@ -38,3 +38,5 @@ Thumbs.db
 .husky/_
 
 apps/web/next-env.d.ts
+
+**/*.md

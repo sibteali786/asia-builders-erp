@@ -8,6 +8,7 @@ import {
   Building2,
   TrendingUp,
   AlertCircle,
+  Calculator,
   Briefcase,
   User,
   MapPin,
@@ -54,13 +55,7 @@ const TYPE_COLORS: Record<string, string> = {
 
 // ── Agreements Tab ────────────────────────────────────────────────────────────
 
-function AgreementsTab({
-  vendorId,
-  onNewAgreement,
-}: {
-  vendorId: number;
-  onNewAgreement: () => void;
-}) {
+function AgreementsTab({ vendorId }: { vendorId: number }) {
   const { data: projects = [], isLoading } = useVendorProjects(vendorId);
   const router = useRouter();
   if (isLoading)
@@ -106,7 +101,7 @@ function AgreementsTab({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
             <div>
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
                 Paid
@@ -123,6 +118,16 @@ function AgreementsTab({
                 className={`text-base font-bold ${p.outstanding > 0 ? "text-[#C9A84C]" : "text-[#14181F]"}`}
               >
                 {fmt(p.outstanding)}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+                Remaining
+              </p>
+              <p
+                className={`text-base font-bold ${p.contractAmount - p.paid + p.outstanding > 0 ? "text-blue-600" : "text-[#14181F]"}`}
+              >
+                {fmt(p.contractAmount - p.paid + p.outstanding)}
               </p>
             </div>
             <div className="text-right">
@@ -431,6 +436,11 @@ export default function VendorDetailPage({
       </div>
     );
 
+  const netRemaining =
+    Number(vendor.contractAmount) -
+    Number(vendor.totalPaid) +
+    Number(vendor.outstanding);
+
   return (
     <div className="space-y-5">
       {/* Back + name + Edit — mirrors ProjectHeader */}
@@ -543,6 +553,27 @@ export default function VendorDetailPage({
             </p>
           </div>
         </div>
+        {/* Net Remaining */}
+        <div className="bg-white rounded-xl border border-border p-5 flex flex-col justify-between">
+          <div className="flex flex-wrap items-start justify-between">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
+              Remaining liability
+            </p>
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 shrink-0">
+              <Calculator size={16} className="text-blue-600" />
+            </span>
+          </div>
+          <div>
+            <p
+              className={`text-2xl font-bold mt-2 ${netRemaining > 0 ? "text-blue-600" : "text-[#14181F]"}`}
+            >
+              {fmt(netRemaining)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Agreement - paid + outstanding
+            </p>
+          </div>
+        </div>
         {/* Active Projects */}
         <div className="bg-white rounded-xl border border-border p-5">
           <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-3">
@@ -642,10 +673,7 @@ export default function VendorDetailPage({
 
         <div className="mt-5">
           <TabsContent value="agreements">
-            <AgreementsTab
-              vendorId={vendorId}
-              onNewAgreement={() => setAssignOpen(true)}
-            />
+            <AgreementsTab vendorId={vendorId} />
           </TabsContent>
           <TabsContent value="payment-history">
             <PaymentHistoryTab vendorId={vendorId} />
