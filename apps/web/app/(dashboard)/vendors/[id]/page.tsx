@@ -91,62 +91,77 @@ function AgreementsTab({ vendorId }: { vendorId: number }) {
                 <Calendar size={11} /> Contract Date: {fmtDate(p.contractDate)}
               </p>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
-                Agreement Value
-              </p>
-              <p className="text-lg font-bold text-[#14181F]">
-                {fmt(p.contractAmount)}
-              </p>
-            </div>
+            {p.vendorType === "CONTRACTOR" && (
+              <div className="text-right">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+                  Agreement Value
+                </p>
+                <p className="text-lg font-bold text-[#14181F]">
+                  {fmt(p.contractAmount)}
+                </p>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-4 gap-4">
-            <div>
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
-                Paid
-              </p>
-              <p className="text-base font-bold text-green-600">
-                {fmt(p.paid)}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
-                Outstanding
-              </p>
-              <p
-                className={`text-base font-bold ${p.outstanding > 0 ? "text-[#C9A84C]" : "text-[#14181F]"}`}
-              >
-                {fmt(p.outstanding)}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
-                Remaining
-              </p>
-              <p
-                className={`text-base font-bold ${p.contractAmount - p.paid + p.outstanding > 0 ? "text-blue-600" : "text-[#14181F]"}`}
-              >
-                {fmt(p.contractAmount - p.paid + p.outstanding)}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
-                Completion
-              </p>
-              <p className="text-base font-bold text-[#14181F]">
-                {p.completion}%
-              </p>
-            </div>
-          </div>
+          {p.vendorType === "CONTRACTOR" ? (
+            <>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+                    Paid
+                  </p>
+                  <p className="text-base font-bold text-green-600">
+                    {fmt(p.paid)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+                    Remaining
+                  </p>
+                  <p className="text-base font-bold text-blue-600">
+                    {fmt(p.contractAmount - p.paid)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+                    Completion
+                  </p>
+                  <p className="text-base font-bold text-[#14181F]">
+                    {p.completion}%
+                  </p>
+                </div>
+              </div>
 
-          {/* Progress bar */}
-          {p.contractAmount > 0 && (
-            <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-              <div
-                className="h-full bg-[#C9A84C] rounded-full transition-all"
-                style={{ width: `${p.completion}%` }}
-              />
+              {/* Progress bar — contractor only */}
+              {p.contractAmount > 0 && (
+                <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#C9A84C] rounded-full transition-all"
+                    style={{ width: `${p.completion}%` }}
+                  />
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+                  Paid
+                </p>
+                <p className="text-base font-bold text-green-600">
+                  {fmt(p.paid)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+                  Outstanding
+                </p>
+                <p
+                  className={`text-base font-bold ${p.outstanding > 0 ? "text-[#C9A84C]" : "text-[#14181F]"}`}
+                >
+                  {fmt(p.outstanding)}
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -436,10 +451,9 @@ export default function VendorDetailPage({
       </div>
     );
 
-  const netRemaining =
-    Number(vendor.contractAmount) -
-    Number(vendor.totalPaid) +
-    Number(vendor.outstanding);
+  const isContractor = vendor.vendorType === "CONTRACTOR";
+  const remainingAgreement =
+    Number(vendor.contractAmount) - Number(vendor.totalPaid);
 
   return (
     <div className="space-y-5">
@@ -478,7 +492,9 @@ export default function VendorDetailPage({
       </div>
 
       {/* Stat cards row — mirrors ProjectStats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+      <div
+        className={`grid gap-2 ${isContractor ? "grid-cols-2 md:grid-cols-5" : "grid-cols-2 md:grid-cols-4"}`}
+      >
         {/* Identity card */}
         <div className="bg-white rounded-xl border border-border p-5 flex flex-col gap-2 justify-between">
           <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground font-semibold">
@@ -494,23 +510,25 @@ export default function VendorDetailPage({
           </div>
         </div>
 
-        {/* Total Agreement Value */}
-        <div className="bg-white rounded-xl border border-border p-5">
-          <div className="flex items-start justify-between flex-wrap">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
-              Total Agreement Value
+        {/* Total Agreement Value — contractor only */}
+        {isContractor && (
+          <div className="bg-white rounded-xl border border-border p-5">
+            <div className="flex items-start justify-between flex-wrap">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
+                Total Agreement Value
+              </p>
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 shrink-0">
+                <Building2 size={16} className="text-[#C9A84C]" />
+              </span>
+            </div>
+            <p className="text-2xl font-bold text-[#14181F] mt-2">
+              {fmt(vendor.contractAmount)}
             </p>
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 shrink-0">
-              <Building2 size={16} className="text-[#C9A84C]" />
-            </span>
+            <p className="text-xs text-muted-foreground mt-1">
+              Total contract sum
+            </p>
           </div>
-          <p className="text-2xl font-bold text-[#14181F] mt-2">
-            {fmt(vendor.contractAmount)}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Total contract sum
-          </p>
-        </div>
+        )}
 
         {/* Total Paid */}
         <div className="bg-white rounded-xl border border-border p-5 flex flex-col justify-between">
@@ -532,48 +550,49 @@ export default function VendorDetailPage({
           </div>
         </div>
 
-        {/* Outstanding */}
-        <div className="bg-white rounded-xl border border-border p-5 flex flex-col justify-between">
-          <div className="flex flex-wrap items-start justify-between">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
-              Outstanding
-            </p>
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 shrink-0">
-              <AlertCircle size={16} className="text-[#C9A84C]" />
-            </span>
+        {isContractor ? (
+          <div className="bg-white rounded-xl border border-border p-5 flex flex-col justify-between">
+            <div className="flex flex-wrap items-start justify-between">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
+                Remaining Agreement
+              </p>
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 shrink-0">
+                <Calculator size={16} className="text-blue-600" />
+              </span>
+            </div>
+            <div>
+              <p
+                className={`text-2xl font-bold mt-2 ${remainingAgreement > 0 ? "text-blue-600" : "text-[#14181F]"}`}
+              >
+                {fmt(remainingAgreement)}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Agreement - paid
+              </p>
+            </div>
           </div>
-          <div>
-            <p
-              className={`text-2xl font-bold mt-2 ${vendor.outstanding > 0 ? "text-[#C9A84C]" : "text-[#14181F]"}`}
-            >
-              {fmt(vendor.outstanding)}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Pending payments
-            </p>
+        ) : (
+          <div className="bg-white rounded-xl border border-border p-5 flex flex-col justify-between">
+            <div className="flex flex-wrap items-start justify-between">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
+                Outstanding
+              </p>
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 shrink-0">
+                <AlertCircle size={16} className="text-[#C9A84C]" />
+              </span>
+            </div>
+            <div>
+              <p
+                className={`text-2xl font-bold mt-2 ${vendor.outstanding > 0 ? "text-[#C9A84C]" : "text-[#14181F]"}`}
+              >
+                {fmt(vendor.outstanding)}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Pending payments
+              </p>
+            </div>
           </div>
-        </div>
-        {/* Net Remaining */}
-        <div className="bg-white rounded-xl border border-border p-5 flex flex-col justify-between">
-          <div className="flex flex-wrap items-start justify-between">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
-              Remaining liability
-            </p>
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 shrink-0">
-              <Calculator size={16} className="text-blue-600" />
-            </span>
-          </div>
-          <div>
-            <p
-              className={`text-2xl font-bold mt-2 ${netRemaining > 0 ? "text-blue-600" : "text-[#14181F]"}`}
-            >
-              {fmt(netRemaining)}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Agreement - paid + outstanding
-            </p>
-          </div>
-        </div>
+        )}
         {/* Active Projects */}
         <div className="bg-white rounded-xl border border-border p-5">
           <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-3">
@@ -690,6 +709,7 @@ export default function VendorDetailPage({
         open={assignOpen}
         onOpenChange={setAssignOpen}
         vendorId={vendorId}
+        vendorType={vendor.vendorType}
       />
     </div>
   );

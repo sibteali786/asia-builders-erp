@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAllTransactions, type Transaction } from "@/hooks/use-transactions";
+import { VendorType } from "@/hooks/use-vendors";
 import { TransactionModal } from "@/components/transactions/transaction-modal";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
@@ -21,6 +22,7 @@ interface VendorFooter {
   paid: number;
   outstanding: number;
   contractAmount: number;
+  vendorType: VendorType;
 }
 
 interface Props {
@@ -45,6 +47,7 @@ function formatDate(d: string) {
 const STATUS_STYLE: Record<string, string> = {
   PAID: "bg-green-100 text-green-700",
   DUE: "bg-yellow-100 text-yellow-700",
+  RECEIVED: "bg-blue-100 text-blue-700",
 };
 
 // ── Table row ─────────────────────────────────────────────────────────────────
@@ -68,7 +71,9 @@ function TxRow({ tx }: { tx: Transaction }) {
         <p className="text-sm font-medium text-foreground">{tx.description}</p>
       </td>
       <td className="py-3.5 pr-4 text-sm text-muted-foreground">
-        {tx.vendor?.name ?? "—"}
+        {tx.transactionType === "INCOME"
+          ? (tx.clientName ?? "—")
+          : (tx.vendor?.name ?? "—")}
       </td>
       <td className="py-3.5 pr-4 text-sm text-muted-foreground">
         {formatDate(tx.transactionDate as string)}
@@ -83,7 +88,11 @@ function TxRow({ tx }: { tx: Transaction }) {
         <span
           className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${STATUS_STYLE[tx.status] ?? ""}`}
         >
-          {tx.status === "PAID" ? "Paid" : "Due"}
+          {tx.status === "PAID"
+            ? "Paid"
+            : tx.status === "RECEIVED"
+              ? "Received"
+              : "Due"}
         </span>
       </td>
       <td className="py-3.5 pr-4 text-xs text-muted-foreground">
@@ -330,7 +339,7 @@ export function ProjectTransactionsView({
                 results
               </p>
 
-              {/* Vendor variant: Paid / Outstanding / Agreement Value */}
+              {/* Vendor variant */}
               {vendorId && data?.totals && (
                 <div className="flex items-center gap-6 text-xs ml-auto">
                   <div>
@@ -341,46 +350,39 @@ export function ProjectTransactionsView({
                       {formatCurrency(data.totals.paidAmount)}
                     </span>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground uppercase tracking-wide font-semibold">
-                      Outstanding{" "}
-                    </span>
-                    <span className="text-[#C9A84C] font-bold">
-                      {formatCurrency(data.totals.dueAmount)}
-                    </span>
-                  </div>
-                  {vendorFooter && (
-                    <div>
-                      <span className="text-muted-foreground uppercase tracking-wide font-semibold">
-                        Agreement Value{" "}
-                      </span>
-                      <span className="text-foreground font-bold">
-                        {formatCurrency(vendorFooter.contractAmount)}
-                      </span>
-                    </div>
-                  )}
+                  {vendorFooter &&
+                    vendorFooter.vendorType !== VendorType.CONTRACTOR && (
+                      <div>
+                        <span className="text-muted-foreground uppercase tracking-wide font-semibold">
+                          Outstanding{" "}
+                        </span>
+                        <span className="text-[#C9A84C] font-bold">
+                          {formatCurrency(data.totals.dueAmount)}
+                        </span>
+                      </div>
+                    )}
+                  {vendorFooter?.vendorType === VendorType.CONTRACTOR &&
+                    vendorFooter.contractAmount > 0 && (
+                      <div>
+                        <span className="text-muted-foreground uppercase tracking-wide font-semibold">
+                          Remaining Agreement{" "}
+                        </span>
+                        <span
+                          className={`font-bold ${vendorFooter.contractAmount - data.totals.paidAmount >= 0 ? "text-blue-600" : "text-red-500"}`}
+                        >
+                          {formatCurrency(
+                            vendorFooter.contractAmount -
+                              data.totals.paidAmount,
+                          )}
+                        </span>
+                      </div>
+                    )}
                 </div>
               )}
 
-              {/* Project variant: Paid / Outstanding / Debits / Credits / Net Flow */}
+              {/* Project variant: Debits / Credits / Net Flow */}
               {!vendorId && data?.totals && (
                 <div className="flex items-center gap-6 text-xs ml-auto">
-                  <div>
-                    <span className="text-muted-foreground uppercase tracking-wide font-semibold">
-                      Paid{" "}
-                    </span>
-                    <span className="text-green-600 font-bold">
-                      {formatCurrency(data.totals.paidAmount)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground uppercase tracking-wide font-semibold">
-                      Outstanding{" "}
-                    </span>
-                    <span className="text-[#C9A84C] font-bold">
-                      {formatCurrency(data.totals.dueAmount)}
-                    </span>
-                  </div>
                   <div>
                     <span className="text-muted-foreground uppercase tracking-wide font-semibold">
                       Total Debits{" "}
@@ -402,16 +404,10 @@ export function ProjectTransactionsView({
                       Net Flow{" "}
                     </span>
                     <span
-                      className={`font-bold ${data.totals.totalCredits - data.totals.paidAmount >= 0 ? "text-green-600" : "text-red-500"}`}
+                      className={`font-bold ${data.totals.netFlow >= 0 ? "text-green-600" : "text-red-500"}`}
                     >
-                      {data.totals.totalCredits - data.totals.paidAmount >= 0
-                        ? "+"
-                        : "-"}
-                      {formatCurrency(
-                        Math.abs(
-                          data.totals.totalCredits - data.totals.paidAmount,
-                        ),
-                      )}
+                      {data.totals.netFlow >= 0 ? "+" : "-"}
+                      {formatCurrency(Math.abs(data.totals.netFlow))}
                     </span>
                   </div>
                 </div>
@@ -431,6 +427,7 @@ export function ProjectTransactionsView({
         open={modalOpen}
         onOpenChange={setModal}
         projectId={projectId}
+        lockedVendorId={vendorId}
       />
     </div>
   );

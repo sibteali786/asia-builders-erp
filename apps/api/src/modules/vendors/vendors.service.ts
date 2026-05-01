@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
-import { Vendor } from './entities/vendor.entity';
+import { Vendor, VendorType } from './entities/vendor.entity';
 import { ProjectVendor } from './entities/project-vendor.entity';
 import { Project } from '../projects/entities/project.entity';
 import {
@@ -73,6 +73,10 @@ export class VendorsService {
         const paidToDate = Number(paidResult?.val ?? 0);
         const outstanding = Number(dueResult?.val ?? 0);
         const contractAmount = Number(pv.contractAmount ?? 0);
+        const remainingAgreement =
+          pv.vendor.vendorType === VendorType.CONTRACTOR
+            ? contractAmount - paidToDate
+            : null;
 
         return {
           projectVendorId: pv.id,
@@ -84,6 +88,7 @@ export class VendorsService {
           paidToDate,
           outstanding,
           contractAmount,
+          remainingAgreement,
         };
       }),
     );
@@ -93,6 +98,12 @@ export class VendorsService {
 
   async findProjects(vendorId: number) {
     await this.assertVendorExists(vendorId);
+    const vendor = await this.vendorRepo.findOne({
+      where: { id: vendorId, deletedAt: IsNull() },
+      select: ['vendorType'],
+    });
+    if (!vendor) throw new NotFoundException(`Vendor #${vendorId} not found`);
+    const vendorType = vendor.vendorType;
 
     const links = await this.projectVendorRepo.find({
       where: { vendor: { id: vendorId }, isActive: true },
@@ -139,6 +150,7 @@ export class VendorsService {
           paid,
           outstanding,
           completion,
+          vendorType,
         };
       }),
     );

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { useVendorOptions } from "@/hooks/use-transactions";
-import { useAssignVendorToProject } from "@/hooks/use-vendors";
+import { useAssignVendorToProject, VendorType } from "@/hooks/use-vendors";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,6 +37,9 @@ export function AssignVendorModal({
   const { data: vendors = [] } = useVendorOptions();
   const [vendorId, setVendorId] = useState("");
   const [contractAmount, setContractAmount] = useState("");
+  const [selectedVendorType, setSelectedVendorType] = useState<VendorType | "">(
+    "",
+  );
 
   const availableVendors = useMemo(
     () => vendors.filter((vendor) => !assignedVendorIds.includes(vendor.id)),
@@ -47,6 +50,17 @@ export function AssignVendorModal({
     onOpenChange(false);
     setVendorId("");
     setContractAmount("");
+    setSelectedVendorType("");
+  }
+
+  function handleVendorChange(val: string) {
+    setVendorId(val);
+    const selected = vendors.find((vendor) => String(vendor.id) === val);
+    const vendorType = selected?.vendorType ?? "";
+    setSelectedVendorType(vendorType);
+    if (vendorType !== VendorType.CONTRACTOR) {
+      setContractAmount("");
+    }
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -95,7 +109,7 @@ export function AssignVendorModal({
             <label className={labelCls}>
               Vendor <span className="text-red-500">*</span>
             </label>
-            <Select value={vendorId} onValueChange={setVendorId}>
+            <Select value={vendorId} onValueChange={handleVendorChange}>
               <SelectTrigger className="w-full h-10">
                 <SelectValue placeholder="Select vendor" />
               </SelectTrigger>
@@ -114,21 +128,23 @@ export function AssignVendorModal({
             )}
           </div>
 
-          <div>
-            <label className={labelCls}>
-              Contract Amount{" "}
-              <span className="text-muted-foreground">(optional)</span>
-            </label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              className={inputCls}
-              placeholder="0.00"
-              value={contractAmount}
-              onChange={(e) => setContractAmount(e.target.value)}
-            />
-          </div>
+          {selectedVendorType === VendorType.CONTRACTOR && (
+            <div>
+              <label className={labelCls}>
+                Contract Amount <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className={inputCls}
+                placeholder="0.00"
+                value={contractAmount}
+                onChange={(e) => setContractAmount(e.target.value)}
+                required
+              />
+            </div>
+          )}
 
           <div className="flex gap-2 pt-1">
             <Button

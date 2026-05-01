@@ -2,11 +2,18 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/lib/axios";
+import { VendorType } from "@/hooks/use-vendors";
+
+export enum TransactionStatus {
+  PAID = "PAID",
+  DUE = "DUE",
+  RECEIVED = "RECEIVED",
+}
 
 export interface GlobalTransaction extends Transaction {
   project: { id: number; name: string };
   balance: number;
-  status: "PAID" | "DUE";
+  status: TransactionStatus;
 }
 
 export interface GlobalTransactionResponse {
@@ -20,8 +27,9 @@ export interface Transaction {
   transactionType: "INCOME" | "EXPENSE";
   transactionDate: string;
   description: string;
+  clientName: string | null;
   amount: number; // negative for expense, positive for income (formatted by backend)
-  status: "PAID" | "DUE";
+  status: TransactionStatus;
   vendor: { id: number; name: string } | null;
   paymentMethod: string | null;
   physicalFileReference: string | null;
@@ -41,8 +49,9 @@ export interface CreateTransactionPayload {
   transactionType: "INCOME" | "EXPENSE";
   transactionDate: string;
   description: string;
+  clientName?: string;
   amount: number;
-  status?: "PAID" | "DUE";
+  status?: TransactionStatus;
   vendorId?: number;
   categoryId?: number;
   paymentMethod?: string;
@@ -128,9 +137,9 @@ export function useVendorOptions() {
   return useQuery({
     queryKey: ["vendors", "all-options"],
     queryFn: async () => {
-      const res = await apiClient.get<{ data: { id: number; name: string }[] }>(
-        "/vendors",
-      );
+      const res = await apiClient.get<{
+        data: { id: number; name: string; vendorType: VendorType }[];
+      }>("/vendors");
       return res.data.data;
     },
   });

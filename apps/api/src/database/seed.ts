@@ -215,6 +215,7 @@ async function seed() {
       string, // status
       string, // transaction_date
       string, // description
+      string | null, // client_name
       number, // amount
       string | null, // payment_method
       number, // project_id
@@ -230,6 +231,7 @@ async function seed() {
         'PAID',
         '2023-03-10',
         'Land Acquisition — DHA Phase 8',
+        null,
         25000000,
         'BANK_TRANSFER',
         dhaId,
@@ -242,6 +244,7 @@ async function seed() {
         'PAID',
         '2023-07-15',
         'Foundation & Structural Work',
+        null,
         3500000,
         'CHEQUE',
         dhaId,
@@ -254,6 +257,7 @@ async function seed() {
         'DUE',
         '2024-02-01',
         'Steel & Rebar Supply',
+        null,
         1800000,
         null,
         dhaId,
@@ -263,9 +267,10 @@ async function seed() {
       ],
       [
         'EXPENSE',
-        'DUE',
+        'PAID',
         '2024-06-01',
         'Phase 2 Construction — Labor',
+        null,
         5000000,
         null,
         dhaId,
@@ -275,9 +280,10 @@ async function seed() {
       ],
       [
         'INCOME',
-        'PAID',
+        'RECEIVED',
         '2023-04-01',
         'Client Advance Payment',
+        'R. Sharma',
         15000000,
         'BANK_TRANSFER',
         dhaId,
@@ -287,9 +293,10 @@ async function seed() {
       ],
       [
         'INCOME',
-        'DUE',
+        'RECEIVED',
         '2024-07-01',
         'Second Progress Payment',
+        'Mr. Rauf Khan',
         8000000,
         null,
         dhaId,
@@ -304,6 +311,7 @@ async function seed() {
         'PAID',
         '2021-06-10',
         'Land Acquisition — Gulberg',
+        null,
         18000000,
         'BANK_TRANSFER',
         gulbergId,
@@ -316,6 +324,7 @@ async function seed() {
         'PAID',
         '2021-09-01',
         'Architectural Design Fee',
+        null,
         4500000,
         'CHEQUE',
         gulbergId,
@@ -328,6 +337,7 @@ async function seed() {
         'PAID',
         '2022-03-01',
         'Bulk Construction Materials',
+        null,
         12000000,
         'BANK_TRANSFER',
         gulbergId,
@@ -340,6 +350,7 @@ async function seed() {
         'PAID',
         '2023-08-01',
         'Labor Wages — Final Phase',
+        null,
         6500000,
         'CASH',
         gulbergId,
@@ -349,9 +360,10 @@ async function seed() {
       ],
       [
         'INCOME',
-        'PAID',
+        'RECEIVED',
         '2024-01-15',
         'Final Sale Revenue',
+        'Hamza Builders',
         85000000,
         'BANK_TRANSFER',
         gulbergId,
@@ -361,9 +373,10 @@ async function seed() {
       ],
       [
         'INCOME',
-        'PAID',
+        'RECEIVED',
         '2023-12-01',
         'Pre-Handover Rental Income',
+        'Sadia Holdings',
         2400000,
         'BANK_TRANSFER',
         gulbergId,
@@ -378,6 +391,7 @@ async function seed() {
         'PAID',
         '2024-06-15',
         'Land Purchase — Bahria Town',
+        null,
         8000000,
         'BANK_TRANSFER',
         bahriaId,
@@ -390,6 +404,7 @@ async function seed() {
         'PAID',
         '2024-07-01',
         'Site Survey & Soil Testing',
+        null,
         250000,
         'CASH',
         bahriaId,
@@ -402,6 +417,7 @@ async function seed() {
         'DUE',
         '2024-08-15',
         'Marble Flooring Installation',
+        null,
         2000000,
         null,
         bahriaId,
@@ -414,6 +430,7 @@ async function seed() {
         'PAID',
         '2024-07-20',
         'Design Consultancy Fee',
+        null,
         1200000,
         'CHEQUE',
         bahriaId,
@@ -423,9 +440,10 @@ async function seed() {
       ],
       [
         'INCOME',
-        'PAID',
+        'RECEIVED',
         '2024-08-01',
         'Buyer Initial Advance',
+        'Imran Ahmed',
         5000000,
         'BANK_TRANSFER',
         bahriaId,
@@ -435,9 +453,10 @@ async function seed() {
       ],
       [
         'INCOME',
-        'DUE',
+        'RECEIVED',
         '2024-09-01',
         'Second Installment',
+        'Ayesha Noor',
         4000000,
         null,
         bahriaId,
@@ -452,6 +471,7 @@ async function seed() {
       status,
       date,
       desc,
+      clientName,
       amount,
       method,
       projectId,
@@ -461,14 +481,15 @@ async function seed() {
     ] of transactions) {
       await qr.query(
         `INSERT INTO transactions
-           (transaction_type, status, transaction_date, description, amount, currency, payment_method,
+           (transaction_type, status, transaction_date, description, client_name, amount, currency, payment_method,
             project_id, vendor_id, category_id, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
         [
           type,
           status,
           date,
           desc,
+          clientName,
           amount,
           'PKR',
           method,
@@ -596,7 +617,9 @@ async function seed() {
     console.log('  Seeded:');
     console.log('    2 users, 10 transaction categories, 5 vendors');
     console.log('    3 projects, 4 project-vendor links');
-    console.log('    18 transactions (mix of PAID/DUE, INCOME/EXPENSE)');
+    console.log(
+      '    18 transactions (EXPENSE: PAID/DUE, INCOME: RECEIVED with client names)',
+    );
     console.log('    3 investments, 4 valuation updates');
   } catch (err) {
     await qr.rollbackTransaction();

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Link2 } from "lucide-react";
 import { toast } from "sonner";
-import { useAssignVendorToProject } from "@/hooks/use-vendors";
+import { VendorType, useAssignVendorToProject } from "@/hooks/use-vendors";
 import { useProjectOptions } from "@/hooks/use-transactions";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,9 +18,15 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   vendorId: number;
+  vendorType: VendorType;
 }
 
-export function AssignProjectModal({ open, onOpenChange, vendorId }: Props) {
+export function AssignProjectModal({
+  open,
+  onOpenChange,
+  vendorId,
+  vendorType,
+}: Props) {
   const assign = useAssignVendorToProject();
   const { data: projects = [] } = useProjectOptions();
   const [projectId, setProjectId] = useState("");
@@ -100,26 +106,28 @@ export function AssignProjectModal({ open, onOpenChange, vendorId }: Props) {
             </button>
 
             {/* Contract amount */}
-            <div>
-              <label className={lbl}>
-                Contract Amount{" "}
-                <span className="text-muted-foreground">(optional)</span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                  ₨
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  className={`${inp} pl-7`}
-                  placeholder="0.00"
-                  value={contractAmount}
-                  onChange={(e) => setContractAmount(e.target.value)}
-                />
+            {vendorType === VendorType.CONTRACTOR && (
+              <div>
+                <label className={lbl}>
+                  Contract Amount <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                    ₨
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className={`${inp} pl-7`}
+                    placeholder="0.00"
+                    value={contractAmount}
+                    onChange={(e) => setContractAmount(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex gap-2 pt-1">
               <Button

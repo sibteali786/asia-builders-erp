@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Phone, ArrowUpRight, Link2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useProjectVendors } from "@/hooks/use-project-vendors";
+import { VendorType } from "@/hooks/use-vendors";
 import { formatCurrency } from "@/lib/utils";
 import { AssignVendorModal } from "@/components/project-detail/assign-vendor-modal";
 
@@ -69,7 +70,23 @@ export function VendorsTab({ projectId }: { projectId: number }) {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-3">
+          <div
+            className={`grid gap-3 ${
+              v.vendorType === VendorType.CONTRACTOR
+                ? "grid-cols-1 sm:grid-cols-3"
+                : "grid-cols-2"
+            }`}
+          >
+            {v.vendorType === VendorType.CONTRACTOR ? (
+              <div className="rounded-lg border border-[#E8D8AD] bg-[#FBF6E8] p-3">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+                  Contract Amount
+                </p>
+                <p className="text-base font-bold text-[#C9A84C]">
+                  {formatCurrency(v.contractAmount)}
+                </p>
+              </div>
+            ) : null}
             <div className="bg-[#F6F5F44D] rounded-lg p-2">
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
                 Paid to Date
@@ -78,14 +95,27 @@ export function VendorsTab({ projectId }: { projectId: number }) {
                 {formatCurrency(v.paidToDate)}
               </p>
             </div>
-            <div className="bg-[#F59F0A0D] rounded-lg p-3 border-[#F59F0A33] border">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
-                Outstanding
-              </p>
-              <p className="text-base font-bold text-[#F59F0A]">
-                {formatCurrency(v.outstanding)}
-              </p>
-            </div>
+            {v.vendorType === VendorType.CONTRACTOR ? (
+              <div className="rounded-lg border border-[#BFDBFE] bg-blue-50 p-3">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+                  Remaining Agreement
+                </p>
+                <p
+                  className={`text-base font-bold ${Number(v.remainingAgreement ?? 0) >= 0 ? "text-blue-600" : "text-red-500"}`}
+                >
+                  {formatCurrency(v.remainingAgreement ?? 0)}
+                </p>
+              </div>
+            ) : (
+              <div className="bg-[#F59F0A0D] rounded-lg p-3 border-[#F59F0A33] border">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+                  Outstanding
+                </p>
+                <p className="text-base font-bold text-[#F59F0A]">
+                  {formatCurrency(v.outstanding)}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       ))}

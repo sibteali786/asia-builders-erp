@@ -19,6 +19,7 @@ export enum PaymentMethod {
 export enum TransactionStatus {
   PAID = 'PAID',
   DUE = 'DUE',
+  RECEIVED = 'RECEIVED',
 }
 
 @Entity('transactions')
@@ -72,6 +73,9 @@ export class Transaction extends SoftDeleteBaseEntity {
 
   @Column({ type: 'text', nullable: true })
   notes: string | null;
+
+  @Column({ name: 'client_name', nullable: true, type: 'varchar', length: 255 })
+  clientName: string | null;
 
   // Relations
   @ManyToOne(() => Project, (p) => p.transactions)

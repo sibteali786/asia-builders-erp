@@ -88,7 +88,9 @@ function TxRow({
               {tx.description}
             </p>
             <p className="text-xs text-muted-foreground">
-              {tx.vendor?.name}
+              {tx.transactionType === "INCOME"
+                ? (tx.clientName ?? "—")
+                : (tx.vendor?.name ?? "—")}
               {tx.physicalFileReference && (
                 <>
                   {" "}

@@ -63,35 +63,56 @@ export function VendorCard({ vendor: v }: Props) {
         <ArrowUpRight size={16} className="text-muted-foreground shrink-0" />
       </div>
       <Separator variant="dashed" />
-      {/* Financial stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        <div className="bg-[#F6F5F44D] p-2 rounded-lg">
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
-            Total Amount
-          </p>
-          <p className="text-sm font-bold text-foreground">
-            {fmt(Number(v.contractAmount))}
-          </p>
+      {/* Financial stats — conditional on vendor type */}
+      {v.vendorType === "CONTRACTOR" ? (
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-[#F6F5F44D] p-2 rounded-lg">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+              Total Agreement
+            </p>
+            <p className="text-sm font-bold text-foreground">
+              {fmt(Number(v.contractAmount))}
+            </p>
+          </div>
+          <div className="bg-[#23C35D0D] border border-[#23C35D1A] p-2 rounded-lg">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+              Amount Paid
+            </p>
+            <p className="text-sm font-bold text-green-600">
+              {fmt(Number(v.amountPaid))}
+            </p>
+          </div>
+          <div className="bg-[#F6F5F44D] p-2 rounded-lg">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+              Remaining
+            </p>
+            <p className="text-sm font-bold text-blue-600">
+              {fmt(Number(v.contractAmount) - Number(v.amountPaid))}
+            </p>
+          </div>
         </div>
-        <div className="bg-[#23C35D0D] border border-[#23C35D1A] p-2 rounded-lg">
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
-            Amount Paid
-          </p>
-          <p className="text-sm font-bold text-green-600">
-            {fmt(Number(v.amountPaid))}
-          </p>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-[#23C35D0D] border border-[#23C35D1A] p-2 rounded-lg">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+              Amount Paid
+            </p>
+            <p className="text-sm font-bold text-green-600">
+              {fmt(Number(v.amountPaid))}
+            </p>
+          </div>
+          <div className="bg-[#F59F0A0D] border border-[#F59F0A33] p-2 rounded-lg">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
+              Outstanding
+            </p>
+            <p
+              className={`text-sm font-bold ${Number(v.outstanding) > 0 ? "text-[#C9A84C]" : "text-foreground"}`}
+            >
+              {fmt(Number(v.outstanding))}
+            </p>
+          </div>
         </div>
-        <div className="bg-[#F59F0A0D] border border-[#F59F0A33] p-2 rounded-lg">
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
-            Outstanding
-          </p>
-          <p
-            className={`text-sm font-bold ${Number(v.outstanding) > 0 ? "text-[#C9A84C]" : "text-foreground"}`}
-          >
-            {fmt(Number(v.outstanding))}
-          </p>
-        </div>
-      </div>
+      )}
 
       {/* Active projects */}
       {v.activeProjects && v.activeProjects.length > 0 && (

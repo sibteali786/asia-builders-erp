@@ -5,6 +5,18 @@ import apiClient from "@/lib/axios";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+export enum VendorType {
+  CONTRACTOR = "CONTRACTOR",
+  SUPPLIER = "SUPPLIER",
+  SERVICE = "SERVICE",
+}
+
+export enum TransactionStatus {
+  PAID = "PAID",
+  DUE = "DUE",
+  RECEIVED = "RECEIVED",
+}
+
 export interface ActiveProject {
   projectId: number;
   projectName: string;
@@ -14,7 +26,7 @@ export interface ActiveProject {
 export interface Vendor {
   id: number;
   name: string;
-  vendorType: "CONTRACTOR" | "SUPPLIER" | "SERVICE";
+  vendorType: VendorType;
   phone: string;
   contractAmount: number;
   amountPaid: number;
@@ -25,7 +37,7 @@ export interface Vendor {
 export interface VendorDetail {
   id: number;
   name: string;
-  vendorType: "CONTRACTOR" | "SUPPLIER" | "SERVICE";
+  vendorType: VendorType;
   phone: string;
   contactPerson: string | null;
   cnic: string | null;
@@ -50,6 +62,7 @@ export interface VendorProject {
   paid: number;
   outstanding: number;
   completion: number;
+  vendorType: VendorType;
 }
 
 export interface VendorTransaction {
@@ -58,7 +71,7 @@ export interface VendorTransaction {
   projectName: string;
   transactionDate: string;
   amount: number;
-  status: "PAID" | "DUE";
+  status: TransactionStatus;
   fileCount: number;
 }
 
@@ -69,7 +82,7 @@ export interface VendorTransactionResponse {
 
 export interface CreateVendorPayload {
   name: string;
-  vendorType: "CONTRACTOR" | "SUPPLIER" | "SERVICE";
+  vendorType: VendorType;
   phone: string;
   contactPerson?: string;
   cnic?: string;

@@ -2,7 +2,8 @@
 
 import { use } from "react";
 import { ProjectTransactionsView } from "@/components/transactions/project-transactions-view";
-import { useVendorProjects } from "@/hooks/use-vendors";
+import { useVendorDetail, useVendorProjects } from "@/hooks/use-vendors";
+import { useProjectDetail } from "@/hooks/use-project-detail";
 
 export default function ProjectVendorTransactionsPage({
   params,
@@ -14,21 +15,24 @@ export default function ProjectVendorTransactionsPage({
   const vId = Number(vendorId);
 
   const { data: projects = [] } = useVendorProjects(vId);
+  const { data: vendor } = useVendorDetail(vId);
+  const { data: project } = useProjectDetail(projectId);
   const agreement = projects.find((p) => p.projectId === projectId);
 
   return (
     <ProjectTransactionsView
       projectId={projectId}
       vendorId={vId}
-      projectName={agreement?.projectName}
+      projectName={project?.name ?? agreement?.projectName ?? "Project"}
       backHref={`/projects/${projectId}`}
-      backLabel={agreement?.projectName ?? `Project #${projectId}`}
+      backLabel={vendor?.name ?? "Vendor"}
       vendorFooter={
         agreement
           ? {
               paid: agreement.paid,
               outstanding: agreement.outstanding,
               contractAmount: agreement.contractAmount,
+              vendorType: agreement.vendorType,
             }
           : undefined
       }

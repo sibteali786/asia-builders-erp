@@ -4,10 +4,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
-import { Transaction, TransactionType } from './entities/transaction.entity';
+import { In, IsNull, Repository } from 'typeorm';
+import {
+  Transaction,
+  TransactionStatus,
+  TransactionType,
+} from './entities/transaction.entity';
 import { Project } from '../projects/entities/project.entity';
-import { Vendor } from '../vendors/entities/vendor.entity';
+import { Vendor, VendorType } from '../vendors/entities/vendor.entity';
 import { TransactionCategory } from './entities/transaction-category.entity';
 import { User } from '../users/entities/user.entity';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
@@ -23,6 +27,7 @@ interface RawTransactionRow {
   transactionType: TransactionType;
   transactionDate: Date;
   description: string;
+  clientName: string | null;
   amount: string;
   status: string;
   paymentMethod: string | null;
@@ -68,6 +73,7 @@ export class TransactionsService {
         't.transaction_type                      AS "transactionType"',
         't.transaction_date                      AS "transactionDate"',
         't.description                           AS description',
+        't.client_name                           AS "clientName"',
         't.amount                                AS amount',
         't.status                                AS status',
         't.payment_method                        AS "paymentMethod"',
@@ -131,6 +137,7 @@ export class TransactionsService {
         transactionType: r.transactionType,
         transactionDate: r.transactionDate,
         description: r.description,
+        clientName: r.clientName ?? null,
         amount,
         status: r.status,
         paymentMethod: r.paymentMethod,
@@ -166,7 +173,11 @@ export class TransactionsService {
     await this.assertProjectExists(projectId);
 
     const rows = await this.txRepo.find({
-      where: { project: { id: projectId }, deletedAt: IsNull() },
+      where: {
+        project: { id: projectId },
+        deletedAt: IsNull(),
+        status: In([TransactionStatus.PAID, TransactionStatus.RECEIVED]),
+      },
       relations: ['vendor'],
       order: { transactionDate: 'DESC', createdAt: 'DESC' },
       take: 5,
@@ -194,6 +205,7 @@ export class TransactionsService {
         't.transaction_type                  AS "transactionType"',
         't.transaction_date                  AS "transactionDate"',
         't.description                       AS description',
+        't.client_name                       AS "clientName"',
         't.amount                            AS amount',
         't.status                            AS status',
         't.payment_method                    AS "paymentMethod"',
@@ -250,6 +262,7 @@ export class TransactionsService {
       transactionType: r.transactionType,
       transactionDate: r.transactionDate,
       description: r.description,
+      clientName: r.clientName ?? null,
       amount:
         r.transactionType === TransactionType.EXPENSE
           ? -Math.abs(Number(r.amount))
@@ -287,6 +300,44 @@ export class TransactionsService {
 
   // ─── CREATE ───────────────────────────────────────────────────────────────────
   async create(dto: CreateTransactionDto, currentUser: User) {
+    // Earliest guard: vendor-linked transactions can never be RECEIVED.
+    if (dto.vendorId && dto.status === TransactionStatus.RECEIVED) {
+      throw new BadRequestException(
+        'Transactions linked to a vendor cannot have RECEIVED status',
+      );
+    }
+
+    // Vendor is required for EXPENSE, forbidden for INCOME.
+    if (dto.transactionType === TransactionType.EXPENSE && !dto.vendorId) {
+      throw new BadRequestException('Expense transactions must have a vendor');
+    }
+    if (dto.transactionType === TransactionType.INCOME && dto.vendorId) {
+      throw new BadRequestException('Income transactions cannot have a vendor');
+    }
+
+    if (dto.transactionType === TransactionType.INCOME) {
+      if (dto.status !== TransactionStatus.RECEIVED) {
+        throw new BadRequestException(
+          'Income transactions must have status RECEIVED',
+        );
+      }
+    }
+
+    // clientName: required for INCOME, forbidden for EXPENSE.
+    if (
+      dto.transactionType === TransactionType.INCOME &&
+      !dto.clientName?.trim()
+    ) {
+      throw new BadRequestException(
+        'Income transactions must have a client name',
+      );
+    }
+    if (dto.transactionType === TransactionType.EXPENSE && dto.clientName) {
+      throw new BadRequestException(
+        'Expense transactions cannot have a client name',
+      );
+    }
+
     const project = await this.projectRepo.findOne({
       where: { id: dto.projectId, deletedAt: IsNull() },
     });
@@ -300,6 +351,20 @@ export class TransactionsService {
       });
       if (!vendor)
         throw new BadRequestException(`Vendor #${dto.vendorId} not found`);
+    }
+
+    if (dto.transactionType === TransactionType.EXPENSE) {
+      if (vendor && vendor.vendorType === VendorType.CONTRACTOR) {
+        if (dto.status !== TransactionStatus.PAID) {
+          throw new BadRequestException(
+            'Contractor expense transactions must have status PAID',
+          );
+        }
+      } else if (dto.status === TransactionStatus.RECEIVED) {
+        throw new BadRequestException(
+          'RECEIVED status is only valid for INCOME transactions',
+        );
+      }
     }
 
     let category: TransactionCategory | null = null;
@@ -321,6 +386,7 @@ export class TransactionsService {
       chequeNumber: dto.chequeNumber ?? null,
       physicalFileReference: dto.physicalFileReference ?? null,
       notes: dto.notes ?? null,
+      clientName: dto.clientName ?? null,
       project,
       vendor,
       category,
@@ -399,6 +465,7 @@ export class TransactionsService {
       transactionType: t.transactionType,
       transactionDate: t.transactionDate,
       description: t.description,
+      clientName: t.clientName ?? null,
       status: t.status,
       amount:
         t.transactionType === TransactionType.EXPENSE

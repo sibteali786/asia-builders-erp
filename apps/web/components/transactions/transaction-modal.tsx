@@ -9,8 +9,10 @@ import {
   useProjectOptions,
   useUploadTransactionDocument,
   GlobalTransaction,
+  TransactionStatus,
   useUpdateTransaction,
 } from "@/hooks/use-transactions";
+import { VendorType } from "@/hooks/use-vendors";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,6 +25,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId: number;
+  lockedVendorId?: number;
   transaction?: GlobalTransaction | null;
 }
 
@@ -32,49 +35,86 @@ const PAYMENT_METHODS = [
   { label: "Bank Transfer", value: "BANK_TRANSFER" },
 ];
 
-const EMPTY = {
-  type: "EXPENSE" as "EXPENSE" | "INCOME",
-  date: "",
-  amount: "",
-  vendorId: "",
-  categoryId: "",
-  description: "",
-  paymentMethod: "",
-  chequeNumber: "",
-  physicalFileReference: "",
-  status: "PAID" as "PAID" | "DUE",
-};
+function buildInitialForm(
+  transaction: GlobalTransaction | null | undefined,
+  lockedVendorId?: number,
+) {
+  const effectiveVendorId = transaction?.vendor?.id ?? lockedVendorId;
+  const isIncome = transaction?.transactionType === "INCOME";
 
-export function TransactionModal({
-  open,
-  onOpenChange,
-  projectId,
-  transaction,
-}: Props) {
-  const isEdit = !!transaction;
-  const [form, setForm] = useState({
+  return {
     type: transaction?.transactionType ?? ("EXPENSE" as "EXPENSE" | "INCOME"),
     date: transaction?.transactionDate
       ? String(transaction.transactionDate).slice(0, 10)
       : "",
     amount: transaction ? String(Math.abs(transaction.amount)) : "",
-    vendorId: transaction?.vendor ? String(transaction.vendor.id) : "",
+    vendorId: isIncome
+      ? ""
+      : effectiveVendorId
+        ? String(effectiveVendorId)
+        : "",
+    clientName: transaction?.clientName ?? "",
     categoryId: "",
     description: transaction?.description ?? "",
     paymentMethod: transaction?.paymentMethod ?? "",
     chequeNumber: "",
     physicalFileReference: transaction?.physicalFileReference ?? "",
-    status: transaction?.status ?? ("PAID" as "PAID" | "DUE"),
-  });
+    status: transaction?.status ?? TransactionStatus.PAID,
+  };
+}
+
+export function TransactionModal({
+  open,
+  onOpenChange,
+  projectId,
+  lockedVendorId,
+  transaction,
+}: Props) {
+  const isEdit = !!transaction;
+  const isVendorLocked = !!lockedVendorId && !isEdit;
+  const [form, setForm] = useState(() =>
+    buildInitialForm(transaction, lockedVendorId),
+  );
   const create = useCreateTransaction(projectId);
   const { data: vendors = [] } = useVendorOptions();
   const { data: projects = [] } = useProjectOptions();
   const [selectedProjectId, setSelectedProjectId] = useState(projectId || 0);
   const uploadDoc = useUploadTransactionDocument();
   const [files, setFiles] = useState<File[]>([]);
+  const selectedVendorType: VendorType | "" =
+    vendors.find((v) => String(v.id) === form.vendorId)?.vendorType ?? "";
 
-  function set(field: keyof typeof form, value: string) {
+  function set<K extends keyof typeof form>(field: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  function handleVendorChange(val: string) {
+    set("vendorId", val);
+    const selectedVendor = vendors.find((v) => String(v.id) === val);
+    const vendorType = selectedVendor?.vendorType ?? "";
+
+    if (val) {
+      // Vendor selected => force expense path.
+      set("type", "EXPENSE");
+      set("clientName", "");
+      if (vendorType === VendorType.CONTRACTOR) {
+        set("status", TransactionStatus.PAID);
+      } else if (form.status === TransactionStatus.RECEIVED) {
+        set("status", TransactionStatus.PAID);
+      }
+    }
+  }
+
+  function handleTypeChange(t: "EXPENSE" | "INCOME") {
+    set("type", t);
+    if (t === "INCOME") {
+      set("status", TransactionStatus.RECEIVED);
+      set("vendorId", "");
+      set("clientName", "");
+    } else {
+      set("status", TransactionStatus.PAID);
+      set("clientName", "");
+    }
   }
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = Array.from(e.target.files ?? []);
@@ -88,6 +128,17 @@ export function TransactionModal({
   const update = useUpdateTransaction();
   const isPending = create.isPending || update.isPending;
 
+  function resetFormState() {
+    setForm(buildInitialForm(transaction, lockedVendorId));
+    setFiles([]);
+    setSelectedProjectId(projectId || 0);
+  }
+
+  function handleModalOpenChange(nextOpen: boolean) {
+    if (!nextOpen) resetFormState();
+    onOpenChange(nextOpen);
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const payload = {
@@ -98,6 +149,8 @@ export function TransactionModal({
       status: form.status,
       projectId: selectedProjectId,
       ...(form.vendorId && { vendorId: Number(form.vendorId) }),
+      ...(form.type === "INCOME" &&
+        form.clientName && { clientName: form.clientName }),
       ...(form.paymentMethod && { paymentMethod: form.paymentMethod }),
       ...(form.chequeNumber && { chequeNumber: form.chequeNumber }),
       ...(form.physicalFileReference && {
@@ -110,7 +163,7 @@ export function TransactionModal({
         {
           onSuccess: () => {
             toast.success("Transaction updated");
-            onOpenChange(false);
+            handleModalOpenChange(false);
           },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onError: (err: any) =>
@@ -129,8 +182,7 @@ export function TransactionModal({
             );
           }
           toast.success("Transaction saved");
-          onOpenChange(false);
-          setForm(EMPTY);
+          handleModalOpenChange(false);
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onError: (err: any) =>
@@ -148,7 +200,7 @@ export function TransactionModal({
     <Dialog
       key={open ? "open" : "closed"}
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleModalOpenChange}
     >
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -167,13 +219,15 @@ export function TransactionModal({
               <button
                 key={t}
                 type="button"
-                onClick={() => set("type", t)}
+                onClick={() => handleTypeChange(t)}
+                disabled={t === "INCOME" && !!form.vendorId}
                 className={`flex-1 py-2.5 text-sm font-medium transition-colors
                   ${
                     form.type === t
                       ? "bg-[#C9A84C]/10 text-[#C9A84C] border-[#C9A84C] border-2 rounded-lg"
                       : "text-muted-foreground hover:bg-accent"
-                  }`}
+                  }
+                  ${t === "INCOME" && !!form.vendorId ? "opacity-40 cursor-not-allowed" : ""}`}
               >
                 {t === "EXPENSE" ? "Expense" : "Income"}
               </button>
@@ -213,7 +267,9 @@ export function TransactionModal({
           </div>
 
           {/* Amount + Vendor */}
-          <div className="grid grid-cols-2 gap-3">
+          <div
+            className={form.type === "EXPENSE" ? "grid grid-cols-2 gap-3" : ""}
+          >
             <div>
               <label className={lbl}>Amount *</label>
               <div className="relative">
@@ -232,39 +288,76 @@ export function TransactionModal({
                 />
               </div>
             </div>
+            {form.type === "EXPENSE" && (
+              <div>
+                <label className={lbl}>
+                  Vendor <span className="text-red-500">*</span>
+                </label>
+                <select
+                  className={inp}
+                  value={form.vendorId}
+                  onChange={(e) => handleVendorChange(e.target.value)}
+                  disabled={isVendorLocked}
+                  required
+                >
+                  <option value="">Select Vendor</option>
+                  {vendors.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+          {/* Client name — only for INCOME */}
+          {form.type === "INCOME" && (
             <div>
-              <label className={lbl}>Vendor</label>
-              <select
+              <label className={lbl}>
+                Client Name <span className="text-red-500">*</span>
+              </label>
+              <input
                 className={inp}
-                value={form.vendorId}
-                onChange={(e) => set("vendorId", e.target.value)}
-              >
-                <option value="">Select Vendor</option>
-                {vendors.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name}
-                  </option>
-                ))}
-              </select>
+                placeholder="e.g. R. Sharma, Mr. Rauf Khan"
+                value={form.clientName}
+                onChange={(e) => set("clientName", e.target.value)}
+                required
+              />
             </div>
-          </div>
-          <div className="flex rounded-lg border border-input overflow-hidden">
-            {(["PAID", "DUE"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => set("status", t)}
-                className={`flex-1 py-2.5 text-sm font-medium transition-colors
-                  ${
-                    form.status === t
-                      ? "bg-[#C9A84C]/10 text-[#008235] border-[#008235] border-2 rounded-lg"
-                      : "text-muted-foreground hover:bg-accent"
-                  }`}
-              >
-                {t === "PAID" ? "Paid" : "Due"}
-              </button>
-            ))}
-          </div>
+          )}
+
+          {/* Status — conditional on type and vendor type */}
+          {form.type === "INCOME" ? (
+            <div className="flex rounded-lg border border-input overflow-hidden bg-green-50">
+              <div className="flex-1 py-2.5 text-sm font-medium text-center text-green-700 border-green-300 border-2 rounded-lg">
+                Received
+              </div>
+            </div>
+          ) : selectedVendorType === VendorType.CONTRACTOR ? (
+            <div className="flex rounded-lg border border-input overflow-hidden bg-green-50">
+              <div className="flex-1 py-2.5 text-sm font-medium text-center text-green-700 border-green-300 border-2 rounded-lg">
+                Paid
+              </div>
+            </div>
+          ) : (
+            <div className="flex rounded-lg border border-input overflow-hidden">
+              {[TransactionStatus.PAID, TransactionStatus.DUE].map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => set("status", t)}
+                  className={`flex-1 py-2.5 text-sm font-medium transition-colors
+                    ${
+                      form.status === t
+                        ? "bg-[#C9A84C]/10 text-[#008235] border-[#008235] border-2 rounded-lg"
+                        : "text-muted-foreground hover:bg-accent"
+                    }`}
+                >
+                  {t === TransactionStatus.PAID ? "Paid" : "Due"}
+                </button>
+              ))}
+            </div>
+          )}
           {/* Description */}
           <div>
             <label className={lbl}>Description *</label>
@@ -375,7 +468,7 @@ export function TransactionModal({
               type="button"
               variant="outline"
               className="flex-1"
-              onClick={() => onOpenChange(false)}
+              onClick={() => handleModalOpenChange(false)}
             >
               Cancel
             </Button>

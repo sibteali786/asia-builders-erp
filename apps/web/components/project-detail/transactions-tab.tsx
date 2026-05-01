@@ -12,6 +12,7 @@ import { formatCurrency } from "@/lib/utils";
 const STATUS_STYLE: Record<string, string> = {
   PAID: "bg-green-100 text-green-700",
   DUE: "bg-yellow-100 text-yellow-700",
+  RECEIVED: "bg-blue-100 text-blue-700",
 };
 
 function formatDate(d: string) {
@@ -41,7 +42,9 @@ function TxRow({ tx }: { tx: Transaction }) {
         <p className="text-sm font-medium text-[#14181F]">{tx.description}</p>
       </td>
       <td className="py-3 pr-4 text-sm text-muted-foreground">
-        {tx.vendor?.name ?? "—"}
+        {tx.transactionType === "INCOME"
+          ? (tx.clientName ?? "—")
+          : (tx.vendor?.name ?? "—")}
       </td>
       <td className="py-3 pr-4 text-sm text-muted-foreground">
         {formatDate(tx.transactionDate as string)}
@@ -55,7 +58,11 @@ function TxRow({ tx }: { tx: Transaction }) {
         <span
           className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_STYLE[tx.status]}`}
         >
-          {tx.status === "PAID" ? "Paid" : "Due"}
+          {tx.status === "PAID"
+            ? "Paid"
+            : tx.status === "RECEIVED"
+              ? "Received"
+              : "Due"}
         </span>
       </td>
       {tx.fileCount > 0 && (

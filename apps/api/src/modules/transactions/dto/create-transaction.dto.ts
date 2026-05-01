@@ -36,6 +36,8 @@ export class CreateTransactionDto {
     example: 'PAID',
     enum: TransactionStatus,
   })
+  // Cross-field rules (type/vendor/clientName/status combinations) are enforced
+  // in transactions.service.ts; DTO validation only verifies enum membership.
   @IsEnum(TransactionStatus)
   status: TransactionStatus;
 
@@ -115,4 +117,14 @@ export class CreateTransactionDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Name of the client for INCOME transactions (e.g. buyer, investor)',
+    example: 'R. Sharma',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  clientName?: string;
 }
