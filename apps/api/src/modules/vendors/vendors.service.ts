@@ -5,7 +5,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
-import { Vendor, VendorType } from './entities/vendor.entity';
+import { Vendor } from './entities/vendor.entity';
+import { VendorTypeEntity } from './entities/vendor-type.entity';
 import { ProjectVendor } from './entities/project-vendor.entity';
 import { Project } from '../projects/entities/project.entity';
 import {
@@ -25,6 +26,8 @@ export class VendorsService {
   constructor(
     @InjectRepository(Vendor)
     private vendorRepo: Repository<Vendor>,
+    @InjectRepository(VendorTypeEntity)
+    private vendorTypeRepo: Repository<VendorTypeEntity>,
     @InjectRepository(ProjectVendor)
     private projectVendorRepo: Repository<ProjectVendor>,
     @InjectRepository(Project)
@@ -43,7 +46,7 @@ export class VendorsService {
     // Get all vendors linked to this project via project_vendors junction table
     const projectVendors = await this.projectVendorRepo.find({
       where: { project: { id: projectId }, isActive: true },
-      relations: ['vendor'],
+      relations: { vendor: { vendorTypeDetails: true } },
     });
 
     // For each vendor, compute paidToDate (sum of EXPENSE transactions for vendor+project)
@@ -73,16 +76,17 @@ export class VendorsService {
         const paidToDate = Number(paidResult?.val ?? 0);
         const outstanding = Number(dueResult?.val ?? 0);
         const contractAmount = Number(pv.contractAmount ?? 0);
-        const remainingAgreement =
-          pv.vendor.vendorType === VendorType.CONTRACTOR
-            ? contractAmount - paidToDate
-            : null;
+        const isContractor = pv.vendor.vendorTypeDetails?.isContractor === true;
+        const remainingAgreement = isContractor
+          ? contractAmount - paidToDate
+          : null;
 
         return {
           projectVendorId: pv.id,
           vendorId: pv.vendor.id,
           name: pv.vendor.name,
-          vendorType: pv.vendor.vendorType,
+          vendorType: pv.vendor.vendorTypeDetails?.slug ?? '',
+          isContractor,
           phone: pv.vendor.phone,
           relationshipType: pv.relationshipType,
           paidToDate,
@@ -100,10 +104,11 @@ export class VendorsService {
     await this.assertVendorExists(vendorId);
     const vendor = await this.vendorRepo.findOne({
       where: { id: vendorId, deletedAt: IsNull() },
-      select: ['vendorType'],
+      relations: { vendorTypeDetails: true },
     });
     if (!vendor) throw new NotFoundException(`Vendor #${vendorId} not found`);
-    const vendorType = vendor.vendorType;
+    const vendorType = vendor.vendorTypeDetails?.slug ?? '';
+    const isContractor = vendor.vendorTypeDetails?.isContractor ?? false;
 
     const links = await this.projectVendorRepo.find({
       where: { vendor: { id: vendorId }, isActive: true },
@@ -151,6 +156,7 @@ export class VendorsService {
           outstanding,
           completion,
           vendorType,
+          isContractor,
         };
       }),
     );
@@ -168,8 +174,23 @@ export class VendorsService {
         `Vendor with phone ${dto.phone} already exists`,
       );
 
-    const vendor = this.vendorRepo.create(dto);
-    return await this.vendorRepo.save(vendor);
+    const typeRow = await this.vendorTypeRepo.findOne({
+      where: { slug: dto.vendorType, isActive: true },
+    });
+    if (!typeRow) {
+      throw new BadRequestException(
+        `Vendor type '${dto.vendorType}' does not exist`,
+      );
+    }
+
+    const rest = { ...dto };
+    delete (rest as { vendorType?: string }).vendorType;
+    const vendor = this.vendorRepo.create({
+      ...rest,
+      vendorTypeDetails: typeRow,
+    });
+    const saved = await this.vendorRepo.save(vendor);
+    return this.findOne(saved.id);
   }
   // ─── LINK EXISTING VENDOR TO PROJECT ─────────────────────────────────────────
   // Powers: "Assign New Vendor" modal — picking from existing vendor list
@@ -222,11 +243,17 @@ export class VendorsService {
       // Join project_vendors to get active project links
       .leftJoin('v.projectVendors', 'pv', 'pv.is_active = true')
       .leftJoin('pv.project', 'p', 'p.deleted_at IS NULL')
+      .leftJoin(
+        'vendor_types',
+        'vt',
+        'vt.slug = v.vendor_type AND vt.is_active = true',
+      )
       // replace from .select([ to the closing ])
       .select([
         'v.id                                         AS id',
         'v.name                                       AS name',
         'v.vendor_type                                AS "vendorType"',
+        'COALESCE(BOOL_OR(vt.is_contractor), false)   AS "isContractor"',
         'v.phone                                      AS phone',
         `COALESCE(SUM(DISTINCT pv.contract_amount), 0) AS "contractAmount"`,
         `(SELECT COALESCE(SUM(t2.amount), 0)
@@ -283,6 +310,7 @@ export class VendorsService {
   async findOne(id: number) {
     const vendor = await this.vendorRepo.findOne({
       where: { id, deletedAt: IsNull() },
+      relations: { vendorTypeDetails: true },
     });
     if (!vendor) throw new NotFoundException(`Vendor #${id} not found`);
 
@@ -319,7 +347,8 @@ export class VendorsService {
     return {
       id: vendor.id,
       name: vendor.name,
-      vendorType: vendor.vendorType,
+      vendorType: vendor.vendorTypeDetails?.slug ?? '',
+      isContractor: vendor.vendorTypeDetails?.isContractor ?? false,
       phone: vendor.phone,
       contactPerson: vendor.contactPerson,
       cnic: vendor.cnic,
@@ -367,11 +396,27 @@ export class VendorsService {
   async update(id: number, dto: Partial<CreateVendorDto>) {
     const vendor = await this.vendorRepo.findOne({
       where: { id, deletedAt: IsNull() },
+      relations: { vendorTypeDetails: true },
     });
     if (!vendor) throw new NotFoundException(`Vendor #${id} not found`);
 
-    Object.assign(vendor, dto);
-    return this.vendorRepo.save(vendor);
+    if (dto.vendorType !== undefined) {
+      const typeRow = await this.vendorTypeRepo.findOne({
+        where: { slug: dto.vendorType, isActive: true },
+      });
+      if (!typeRow) {
+        throw new BadRequestException(
+          `Vendor type '${dto.vendorType}' does not exist`,
+        );
+      }
+      vendor.vendorTypeDetails = typeRow;
+    }
+
+    const rest = { ...dto };
+    delete (rest as { vendorType?: string }).vendorType;
+    Object.assign(vendor, rest);
+    await this.vendorRepo.save(vendor);
+    return this.findOne(id);
   }
 
   // ─── SOFT DELETE ──────────────────────────────────────────────────────────────

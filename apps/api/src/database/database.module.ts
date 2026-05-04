@@ -10,6 +10,7 @@ import { TransactionCategory } from '../modules/transactions/entities/transactio
 import { Investment } from '../modules/investments/entities/investment.entity';
 import { InvestmentValueUpdate } from '../modules/investments/entities/investment-value-update.entity';
 import { Document } from '../modules/documents/entities/document.entity';
+import { VendorTypeEntity } from 'src/modules/vendors/entities/vendor-type.entity';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { Document } from '../modules/documents/entities/document.entity';
           Investment,
           InvestmentValueUpdate,
           Document,
+          VendorTypeEntity,
         ],
         synchronize: false,
         logging: config.get('NODE_ENV') === 'development',

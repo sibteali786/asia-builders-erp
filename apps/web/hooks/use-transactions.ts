@@ -2,7 +2,6 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/lib/axios";
-import { VendorType } from "@/hooks/use-vendors";
 
 export enum TransactionStatus {
   PAID = "PAID",
@@ -138,7 +137,12 @@ export function useVendorOptions() {
     queryKey: ["vendors", "all-options"],
     queryFn: async () => {
       const res = await apiClient.get<{
-        data: { id: number; name: string; vendorType: VendorType }[];
+        data: {
+          id: number;
+          name: string;
+          vendorType: string;
+          isContractor: boolean;
+        }[];
       }>("/vendors");
       return res.data.data;
     },

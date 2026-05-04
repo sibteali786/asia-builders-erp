@@ -53,6 +53,13 @@ const TYPE_COLORS: Record<string, string> = {
   SERVICE: "bg-green-100 text-green-700",
 };
 
+function formatTypeSlug(slug: string) {
+  return slug
+    .split("_")
+    .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
 // ── Agreements Tab ────────────────────────────────────────────────────────────
 
 function AgreementsTab({ vendorId }: { vendorId: number }) {
@@ -91,7 +98,7 @@ function AgreementsTab({ vendorId }: { vendorId: number }) {
                 <Calendar size={11} /> Contract Date: {fmtDate(p.contractDate)}
               </p>
             </div>
-            {p.vendorType === "CONTRACTOR" && (
+            {p.isContractor && (
               <div className="text-right">
                 <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
                   Agreement Value
@@ -103,7 +110,7 @@ function AgreementsTab({ vendorId }: { vendorId: number }) {
             )}
           </div>
 
-          {p.vendorType === "CONTRACTOR" ? (
+          {p.isContractor ? (
             <>
               <div className="grid grid-cols-3 gap-4">
                 <div>
@@ -451,7 +458,7 @@ export default function VendorDetailPage({
       </div>
     );
 
-  const isContractor = vendor.vendorType === "CONTRACTOR";
+  const isContractor = vendor.isContractor;
   const remainingAgreement =
     Number(vendor.contractAmount) - Number(vendor.totalPaid);
 
@@ -474,7 +481,7 @@ export default function VendorDetailPage({
               <span
                 className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${TYPE_COLORS[vendor.vendorType] ?? "bg-muted"}`}
               >
-                {vendor.vendorType}
+                {formatTypeSlug(vendor.vendorType)}
               </span>
               <span className="text-sm text-muted-foreground">
                 • {vendor.phone}
@@ -709,7 +716,7 @@ export default function VendorDetailPage({
         open={assignOpen}
         onOpenChange={setAssignOpen}
         vendorId={vendorId}
-        vendorType={vendor.vendorType}
+        isContractor={vendor.isContractor}
       />
     </div>
   );

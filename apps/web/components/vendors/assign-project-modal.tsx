@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Link2 } from "lucide-react";
 import { toast } from "sonner";
-import { VendorType, useAssignVendorToProject } from "@/hooks/use-vendors";
+import { useAssignVendorToProject } from "@/hooks/use-vendors";
 import { useProjectOptions } from "@/hooks/use-transactions";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,14 +18,14 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   vendorId: number;
-  vendorType: VendorType;
+  isContractor: boolean;
 }
 
 export function AssignProjectModal({
   open,
   onOpenChange,
   vendorId,
-  vendorType,
+  isContractor,
 }: Props) {
   const assign = useAssignVendorToProject();
   const { data: projects = [] } = useProjectOptions();
@@ -106,7 +106,7 @@ export function AssignProjectModal({
             </button>
 
             {/* Contract amount */}
-            {vendorType === VendorType.CONTRACTOR && (
+            {isContractor && (
               <div>
                 <label className={lbl}>
                   Contract Amount <span className="text-red-500">*</span>

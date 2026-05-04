@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { UserRound, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import {
   useCreateVendor,
   useUpdateVendor,
+  useVendorTypes,
+  useCreateVendorType,
   type VendorDetail,
   type CreateVendorPayload,
 } from "@/hooks/use-vendors";
@@ -23,15 +25,9 @@ interface Props {
   vendor?: VendorDetail | null; // present → edit mode
 }
 
-const VENDOR_TYPES = [
-  { label: "Contractor", value: "CONTRACTOR" },
-  { label: "Supplier", value: "SUPPLIER" },
-  { label: "Service", value: "SERVICE" },
-] as const;
-
 const EMPTY = {
   name: "",
-  vendorType: "CONTRACTOR" as CreateVendorPayload["vendorType"],
+  vendorType: "",
   phone: "",
   contactPerson: "",
   cnic: "",
@@ -50,20 +46,64 @@ export function VendorModal({ open, onOpenChange, vendor }: Props) {
   const isPending = create.isPending || update.isPending;
   const [bankOpen, setBankOpen] = useState(false);
 
-  const [form, setForm] = useState({
-    name: vendor?.name ?? "",
-    vendorType:
-      vendor?.vendorType ?? ("CONTRACTOR" as CreateVendorPayload["vendorType"]),
-    phone: vendor?.phone ?? "",
-    contactPerson: vendor?.contactPerson ?? "",
-    cnic: vendor?.cnic ?? "",
-    address: vendor?.address ?? "",
-    bankName: vendor?.bankName ?? "",
-    bankAccountTitle: vendor?.bankAccountTitle ?? "",
-    bankAccountNumber: vendor?.bankAccountNumber ?? "",
-    bankIban: vendor?.bankIban ?? "",
-    notes: vendor?.notes ?? "",
-  });
+  const { data: vendorTypes = [] } = useVendorTypes();
+  const createType = useCreateVendorType();
+  const [typeSearch, setTypeSearch] = useState("");
+  const [typeOpen, setTypeOpen] = useState(false);
+  const typeRef = useRef<HTMLDivElement>(null);
+
+  const [form, setForm] = useState({ ...EMPTY });
+
+  useEffect(() => {
+    if (!open) return;
+    queueMicrotask(() => {
+      setForm({
+        name: vendor?.name ?? "",
+        vendorType: vendor?.vendorType ?? "",
+        phone: vendor?.phone ?? "",
+        contactPerson: vendor?.contactPerson ?? "",
+        cnic: vendor?.cnic ?? "",
+        address: vendor?.address ?? "",
+        bankName: vendor?.bankName ?? "",
+        bankAccountTitle: vendor?.bankAccountTitle ?? "",
+        bankAccountNumber: vendor?.bankAccountNumber ?? "",
+        bankIban: vendor?.bankIban ?? "",
+        notes: vendor?.notes ?? "",
+      });
+      setBankOpen(false);
+      setTypeOpen(false);
+      setTypeSearch("");
+    });
+  }, [open, vendor]);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (typeRef.current && !typeRef.current.contains(e.target as Node)) {
+        setTypeOpen(false);
+        setTypeSearch("");
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const selectedTypeLabel =
+    vendorTypes.find((t) => t.slug === form.vendorType)?.label ??
+    (form.vendorType
+      ? form.vendorType
+          .split("_")
+          .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
+          .join(" ")
+      : "");
+
+  const filteredTypes = vendorTypes.filter((t) =>
+    t.label.toLowerCase().includes(typeSearch.toLowerCase()),
+  );
+  const canCreate =
+    typeSearch.trim().length >= 2 &&
+    !vendorTypes.some(
+      (t) => t.label.toLowerCase() === typeSearch.trim().toLowerCase(),
+    );
 
   function set(field: keyof typeof form, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -76,11 +116,14 @@ export function VendorModal({ open, onOpenChange, vendor }: Props) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.vendorType.trim()) {
+      toast.error("Please select a vendor type");
+      return;
+    }
 
-    // Strip empty optional strings to undefined so backend ignores them
     const payload: CreateVendorPayload = {
       name: form.name,
-      vendorType: form.vendorType,
+      vendorType: form.vendorType.trim(),
       phone: form.phone,
       ...(form.contactPerson && { contactPerson: form.contactPerson }),
       ...(form.cnic && { cnic: form.cnic }),
@@ -146,26 +189,74 @@ export function VendorModal({ open, onOpenChange, vendor }: Props) {
                 required
               />
             </div>
-            <div>
+            <div ref={typeRef} className="relative">
               <label className={lbl}>
                 Type <span className="text-red-500">*</span>
               </label>
-              <select
-                className={inp}
-                value={form.vendorType}
-                onChange={(e) =>
-                  set(
-                    "vendorType",
-                    e.target.value as CreateVendorPayload["vendorType"],
-                  )
-                }
-              >
-                {VENDOR_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
+              <input
+                className={`${inp} cursor-pointer`}
+                placeholder="Select type..."
+                value={typeOpen ? typeSearch : selectedTypeLabel}
+                onFocus={() => {
+                  setTypeOpen(true);
+                  setTypeSearch(selectedTypeLabel);
+                }}
+                onChange={(e) => {
+                  if (typeOpen) setTypeSearch(e.target.value);
+                }}
+              />
+              {typeOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-input rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {filteredTypes.map((t) => (
+                    <button
+                      key={t.slug}
+                      type="button"
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-accent flex items-center justify-between
+                        ${form.vendorType === t.slug ? "bg-accent" : ""}`}
+                      onClick={() => {
+                        set("vendorType", t.slug);
+                        setTypeOpen(false);
+                        setTypeSearch("");
+                      }}
+                    >
+                      <span>{t.label}</span>
+                      {t.isContractor && (
+                        <span className="text-[10px] text-purple-600 font-medium uppercase tracking-wide">
+                          Contract
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                  {canCreate && (
+                    <button
+                      type="button"
+                      disabled={createType.isPending}
+                      className="w-full text-left px-3 py-2 text-sm text-[#C9A84C] font-medium hover:bg-accent border-t border-input"
+                      onClick={async () => {
+                        try {
+                          const newType = await createType.mutateAsync(
+                            typeSearch.trim(),
+                          );
+                          set("vendorType", newType.slug);
+                          setTypeOpen(false);
+                          setTypeSearch("");
+                        } catch {
+                          toast.error("Failed to create type");
+                        }
+                      }}
+                    >
+                      {createType.isPending
+                        ? "Creating..."
+                        : `+ Create "${typeSearch.trim()}"`}
+                    </button>
+                  )}
+                  {filteredTypes.length === 0 && !canCreate && (
+                    <div className="px-3 py-2 text-sm text-muted-foreground">
+                      Type at least 2 characters to create
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

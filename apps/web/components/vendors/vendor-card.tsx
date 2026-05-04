@@ -26,6 +26,13 @@ const TYPE_COLORS: Record<string, string> = {
   SERVICE: "bg-green-50 text-green-700",
 };
 
+function formatTypeSlug(slug: string) {
+  return slug
+    .split("_")
+    .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
 interface Props {
   vendor: Vendor;
 }
@@ -52,7 +59,7 @@ export function VendorCard({ vendor: v }: Props) {
               <span
                 className={`text-xs font-medium px-2 py-0.5 rounded-full ${TYPE_COLORS[v.vendorType] ?? "bg-muted text-muted-foreground"}`}
               >
-                {v.vendorType.charAt(0) + v.vendorType.slice(1).toLowerCase()}
+                {formatTypeSlug(v.vendorType)}
               </span>
               <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Phone size={10} /> {v.phone}
@@ -64,7 +71,7 @@ export function VendorCard({ vendor: v }: Props) {
       </div>
       <Separator variant="dashed" />
       {/* Financial stats — conditional on vendor type */}
-      {v.vendorType === "CONTRACTOR" ? (
+      {v.isContractor ? (
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-[#F6F5F44D] p-2 rounded-lg">
             <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">

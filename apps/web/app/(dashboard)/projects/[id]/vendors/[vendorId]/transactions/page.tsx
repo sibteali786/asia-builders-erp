@@ -32,7 +32,7 @@ export default function ProjectVendorTransactionsPage({
               paid: agreement.paid,
               outstanding: agreement.outstanding,
               contractAmount: agreement.contractAmount,
-              vendorType: agreement.vendorType,
+              isContractor: agreement.isContractor,
             }
           : undefined
       }

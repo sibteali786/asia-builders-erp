@@ -1,21 +1,18 @@
-import { Column, Entity, OneToMany } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { SoftDeleteBaseEntity } from '../../../common/entities/base.entity';
 import { Transaction } from '../../transactions/entities/transaction.entity';
 import { ProjectVendor } from './project-vendor.entity';
-
-export enum VendorType {
-  CONTRACTOR = 'CONTRACTOR',
-  SUPPLIER = 'SUPPLIER',
-  SERVICE = 'SERVICE',
-}
+import { VendorTypeEntity } from './vendor-type.entity';
 
 @Entity('vendors')
 export class Vendor extends SoftDeleteBaseEntity {
   @Column({ length: 255 })
   name: string;
 
-  @Column({ name: 'vendor_type', type: 'varchar', length: 50 })
-  vendorType: VendorType;
+  /** Slug FK to `vendor_types.slug` — use `vendorTypeDetails` relation for `isContractor`. */
+  @ManyToOne(() => VendorTypeEntity, { nullable: true, eager: false })
+  @JoinColumn({ name: 'vendor_type', referencedColumnName: 'slug' })
+  vendorTypeDetails: VendorTypeEntity | null;
   @Column({
     name: 'contact_person',
     nullable: true,

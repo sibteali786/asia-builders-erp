@@ -2,13 +2,13 @@
 
 import { useQuery } from "@tanstack/react-query";
 import apiClient from "@/lib/axios";
-import { VendorType } from "@/hooks/use-vendors";
 
 export interface ProjectVendor {
   projectVendorId: number;
   vendorId: number;
   name: string;
-  vendorType: VendorType;
+  vendorType: string;
+  isContractor: boolean;
   phone: string;
   relationshipType: string;
   paidToDate: number;
@@ -22,7 +22,7 @@ export function useProjectVendors(projectId: number) {
     queryKey: ["vendors", "project", projectId],
     queryFn: async () => {
       const res = await apiClient.get<ProjectVendor[]>(
-        `vendors/projects/${projectId}/vendors`,
+        `/vendors/projects/${projectId}/vendors`,
       );
       return res.data;
     },

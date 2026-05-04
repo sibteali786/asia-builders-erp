@@ -4,9 +4,15 @@ import { useState } from "react";
 import { Phone, ArrowUpRight, Link2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useProjectVendors } from "@/hooks/use-project-vendors";
-import { VendorType } from "@/hooks/use-vendors";
 import { formatCurrency } from "@/lib/utils";
 import { AssignVendorModal } from "@/components/project-detail/assign-vendor-modal";
+
+function formatTypeSlug(slug: string) {
+  return slug
+    .split("_")
+    .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
+    .join(" ");
+}
 
 function initials(name: string) {
   return name
@@ -49,7 +55,7 @@ export function VendorsTab({ projectId }: { projectId: number }) {
                 <p className="font-semibold text-[#14181F] text-sm">{v.name}</p>
                 <div className="flex items-center gap-3 mt-0.5">
                   <span className="text-xs text-purple-600 font-medium bg-purple-50 px-2 py-0.5 rounded-full">
-                    {v.vendorType}
+                    {formatTypeSlug(v.vendorType)}
                   </span>
                   <span className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Phone size={10} />
@@ -72,12 +78,10 @@ export function VendorsTab({ projectId }: { projectId: number }) {
           {/* Stats */}
           <div
             className={`grid gap-3 ${
-              v.vendorType === VendorType.CONTRACTOR
-                ? "grid-cols-1 sm:grid-cols-3"
-                : "grid-cols-2"
+              v.isContractor ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2"
             }`}
           >
-            {v.vendorType === VendorType.CONTRACTOR ? (
+            {v.isContractor ? (
               <div className="rounded-lg border border-[#E8D8AD] bg-[#FBF6E8] p-3">
                 <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
                   Contract Amount
@@ -95,7 +99,7 @@ export function VendorsTab({ projectId }: { projectId: number }) {
                 {formatCurrency(v.paidToDate)}
               </p>
             </div>
-            {v.vendorType === VendorType.CONTRACTOR ? (
+            {v.isContractor ? (
               <div className="rounded-lg border border-[#BFDBFE] bg-blue-50 p-3">
                 <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold mb-0.5">
                   Remaining Agreement

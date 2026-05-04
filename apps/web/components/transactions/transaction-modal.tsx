@@ -12,7 +12,6 @@ import {
   TransactionStatus,
   useUpdateTransaction,
 } from "@/hooks/use-transactions";
-import { VendorType } from "@/hooks/use-vendors";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -81,8 +80,8 @@ export function TransactionModal({
   const [selectedProjectId, setSelectedProjectId] = useState(projectId || 0);
   const uploadDoc = useUploadTransactionDocument();
   const [files, setFiles] = useState<File[]>([]);
-  const selectedVendorType: VendorType | "" =
-    vendors.find((v) => String(v.id) === form.vendorId)?.vendorType ?? "";
+  const selectedVendorIsContractor =
+    vendors.find((v) => String(v.id) === form.vendorId)?.isContractor ?? false;
 
   function set<K extends keyof typeof form>(field: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -91,13 +90,12 @@ export function TransactionModal({
   function handleVendorChange(val: string) {
     set("vendorId", val);
     const selectedVendor = vendors.find((v) => String(v.id) === val);
-    const vendorType = selectedVendor?.vendorType ?? "";
 
     if (val) {
       // Vendor selected => force expense path.
       set("type", "EXPENSE");
       set("clientName", "");
-      if (vendorType === VendorType.CONTRACTOR) {
+      if (selectedVendor?.isContractor === true) {
         set("status", TransactionStatus.PAID);
       } else if (form.status === TransactionStatus.RECEIVED) {
         set("status", TransactionStatus.PAID);
@@ -333,7 +331,7 @@ export function TransactionModal({
                 Received
               </div>
             </div>
-          ) : selectedVendorType === VendorType.CONTRACTOR ? (
+          ) : selectedVendorIsContractor ? (
             <div className="flex rounded-lg border border-input overflow-hidden bg-green-50">
               <div className="flex-1 py-2.5 text-sm font-medium text-center text-green-700 border-green-300 border-2 rounded-lg">
                 Paid

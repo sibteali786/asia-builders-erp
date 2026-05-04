@@ -5,12 +5,6 @@ import apiClient from "@/lib/axios";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export enum VendorType {
-  CONTRACTOR = "CONTRACTOR",
-  SUPPLIER = "SUPPLIER",
-  SERVICE = "SERVICE",
-}
-
 export enum TransactionStatus {
   PAID = "PAID",
   DUE = "DUE",
@@ -23,10 +17,19 @@ export interface ActiveProject {
   paid: number;
 }
 
+export interface VendorTypeOption {
+  id: number;
+  slug: string;
+  label: string;
+  isContractor: boolean;
+  isSystemDefined: boolean;
+}
+
 export interface Vendor {
   id: number;
   name: string;
-  vendorType: VendorType;
+  vendorType: string;
+  isContractor: boolean;
   phone: string;
   contractAmount: number;
   amountPaid: number;
@@ -37,7 +40,8 @@ export interface Vendor {
 export interface VendorDetail {
   id: number;
   name: string;
-  vendorType: VendorType;
+  vendorType: string;
+  isContractor: boolean;
   phone: string;
   contactPerson: string | null;
   cnic: string | null;
@@ -62,7 +66,8 @@ export interface VendorProject {
   paid: number;
   outstanding: number;
   completion: number;
-  vendorType: VendorType;
+  vendorType: string;
+  isContractor: boolean;
 }
 
 export interface VendorTransaction {
@@ -82,7 +87,7 @@ export interface VendorTransactionResponse {
 
 export interface CreateVendorPayload {
   name: string;
-  vendorType: VendorType;
+  vendorType: string;
   phone: string;
   contactPerson?: string;
   cnic?: string;
@@ -92,6 +97,46 @@ export interface CreateVendorPayload {
   bankAccountNumber?: string;
   bankIban?: string;
   notes?: string;
+}
+
+// ── Vendor types (settings + combobox) ─────────────────────────────────────
+
+export function useVendorTypes() {
+  return useQuery({
+    queryKey: ["vendor-types"],
+    queryFn: async () => {
+      const res = await apiClient.get<VendorTypeOption[]>("/vendor-types");
+      return res.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateVendorType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (label: string) => {
+      const res = await apiClient.post<VendorTypeOption>("/vendor-types", {
+        label,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["vendor-types"] });
+    },
+  });
+}
+
+export function useDeleteVendorType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await apiClient.delete(`/vendor-types/${id}`);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["vendor-types"] });
+    },
+  });
 }
 
 // ── Vendor list ───────────────────────────────────────────────────────────────

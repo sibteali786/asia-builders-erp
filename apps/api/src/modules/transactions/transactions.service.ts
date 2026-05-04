@@ -11,7 +11,7 @@ import {
   TransactionType,
 } from './entities/transaction.entity';
 import { Project } from '../projects/entities/project.entity';
-import { Vendor, VendorType } from '../vendors/entities/vendor.entity';
+import { Vendor } from '../vendors/entities/vendor.entity';
 import { TransactionCategory } from './entities/transaction-category.entity';
 import { User } from '../users/entities/user.entity';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
@@ -348,13 +348,14 @@ export class TransactionsService {
     if (dto.vendorId) {
       vendor = await this.vendorRepo.findOne({
         where: { id: dto.vendorId, deletedAt: IsNull() },
+        relations: { vendorTypeDetails: true },
       });
       if (!vendor)
         throw new BadRequestException(`Vendor #${dto.vendorId} not found`);
     }
 
     if (dto.transactionType === TransactionType.EXPENSE) {
-      if (vendor && vendor.vendorType === VendorType.CONTRACTOR) {
+      if (vendor && vendor.vendorTypeDetails?.isContractor === true) {
         if (dto.status !== TransactionStatus.PAID) {
           throw new BadRequestException(
             'Contractor expense transactions must have status PAID',

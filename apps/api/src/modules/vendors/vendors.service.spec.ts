@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { VendorsService } from './vendors.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Vendor } from './entities/vendor.entity';
+import { VendorTypeEntity } from './entities/vendor-type.entity';
 import { ProjectVendor } from './entities/project-vendor.entity';
 import { Project } from '../projects/entities/project.entity';
 import { Transaction } from '../transactions/entities/transaction.entity';
@@ -16,6 +17,10 @@ describe('VendorsService', () => {
         VendorsService,
         {
           provide: getRepositoryToken(Vendor),
+          useValue: {},
+        },
+        {
+          provide: getRepositoryToken(VendorTypeEntity),
           useValue: {},
         },
         {

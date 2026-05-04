@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useEffect } from "react";
+import { VendorTypesSettings } from "@/components/settings/vendor-types-settings";
 
 const settingsSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -258,6 +259,8 @@ function SettingsForm({ me }: { me: AuthUser }) {
           </FieldGroup>
         </form>
       </div>
+
+      <VendorTypesSettings />
     </div>
   );
 }

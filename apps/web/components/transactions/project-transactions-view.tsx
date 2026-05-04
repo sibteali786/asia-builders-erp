@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAllTransactions, type Transaction } from "@/hooks/use-transactions";
-import { VendorType } from "@/hooks/use-vendors";
 import { TransactionModal } from "@/components/transactions/transaction-modal";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
@@ -22,7 +21,7 @@ interface VendorFooter {
   paid: number;
   outstanding: number;
   contractAmount: number;
-  vendorType: VendorType;
+  isContractor: boolean;
 }
 
 interface Props {
@@ -210,7 +209,7 @@ export function ProjectTransactionsView({
   const calculatedDueAmount = Math.abs(data?.totals?.dueAmount ?? 0);
   const agreementOutstanding = Math.abs(vendorFooter?.outstanding ?? 0);
   const outstandingAmount = Math.max(calculatedDueAmount, agreementOutstanding);
-  const isContractorVendor = vendorFooter?.vendorType === VendorType.CONTRACTOR;
+  const isContractorVendor = vendorFooter?.isContractor === true;
 
   function handleBack() {
     if (backHref) router.push(backHref);
@@ -364,7 +363,7 @@ export function ProjectTransactionsView({
                       </span>
                     </div>
                   )}
-                  {vendorFooter?.vendorType === VendorType.CONTRACTOR &&
+                  {vendorFooter?.isContractor &&
                     vendorFooter.contractAmount > 0 && (
                       <div>
                         <span className="text-muted-foreground uppercase tracking-wide font-semibold">

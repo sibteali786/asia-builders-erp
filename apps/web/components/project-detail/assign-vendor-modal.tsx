@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { useVendorOptions } from "@/hooks/use-transactions";
-import { useAssignVendorToProject, VendorType } from "@/hooks/use-vendors";
+import { useAssignVendorToProject } from "@/hooks/use-vendors";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,9 +37,7 @@ export function AssignVendorModal({
   const { data: vendors = [] } = useVendorOptions();
   const [vendorId, setVendorId] = useState("");
   const [contractAmount, setContractAmount] = useState("");
-  const [selectedVendorType, setSelectedVendorType] = useState<VendorType | "">(
-    "",
-  );
+  const [selectedIsContractor, setSelectedIsContractor] = useState(false);
 
   const availableVendors = useMemo(
     () => vendors.filter((vendor) => !assignedVendorIds.includes(vendor.id)),
@@ -50,15 +48,15 @@ export function AssignVendorModal({
     onOpenChange(false);
     setVendorId("");
     setContractAmount("");
-    setSelectedVendorType("");
+    setSelectedIsContractor(false);
   }
 
   function handleVendorChange(val: string) {
     setVendorId(val);
     const selected = vendors.find((vendor) => String(vendor.id) === val);
-    const vendorType = selected?.vendorType ?? "";
-    setSelectedVendorType(vendorType);
-    if (vendorType !== VendorType.CONTRACTOR) {
+    const isContractor = selected?.isContractor === true;
+    setSelectedIsContractor(isContractor);
+    if (!isContractor) {
       setContractAmount("");
     }
   }
@@ -128,7 +126,7 @@ export function AssignVendorModal({
             )}
           </div>
 
-          {selectedVendorType === VendorType.CONTRACTOR && (
+          {selectedIsContractor && (
             <div>
               <label className={labelCls}>
                 Contract Amount <span className="text-red-500">*</span>

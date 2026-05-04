@@ -1,13 +1,11 @@
 import {
   IsString,
   IsNotEmpty,
-  IsEnum,
   IsOptional,
   IsNumber,
   IsPositive,
   MaxLength,
 } from 'class-validator';
-import { VendorType } from '../entities/vendor.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateVendorDto {
@@ -21,12 +19,13 @@ export class CreateVendorDto {
   name: string;
 
   @ApiProperty({
-    description: 'The type of the vendor',
-    enum: VendorType,
-    example: VendorType.CONTRACTOR,
+    description: 'Vendor type slug (must exist in vendor_types)',
+    example: 'CONTRACTOR',
   })
-  @IsEnum(VendorType)
-  vendorType: VendorType;
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(50)
+  vendorType: string;
 
   @ApiProperty({
     description: 'The contact phone number of the vendor',

@@ -2,6 +2,7 @@
 
 import { use } from "react";
 import { ProjectTransactionsView } from "@/components/transactions/project-transactions-view";
+import { useProjectDetail } from "@/hooks/use-project-detail";
 
 export default function ProjectTransactionsPage({
   params,
@@ -9,5 +10,14 @@ export default function ProjectTransactionsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  return <ProjectTransactionsView projectId={Number(id)} />;
+  const projectId = Number(id);
+  const { data: project } = useProjectDetail(projectId);
+
+  return (
+    <ProjectTransactionsView
+      projectId={projectId}
+      projectName={project?.name}
+      backLabel="Back"
+    />
+  );
 }
