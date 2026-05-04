@@ -19,7 +19,7 @@ export default function VendorProjectTransactionsPage({
   const { data: projects = [] } = useVendorProjects(vendorId);
   const { data: vendor } = useVendorDetail(vendorId);
   const { data: project } = useProjectDetail(projId);
-  const agreement = projects.find((p) => p.projectId === projId);
+  const agreement = projects.find((p) => Number(p.projectId) === projId);
 
   return (
     <ProjectTransactionsView

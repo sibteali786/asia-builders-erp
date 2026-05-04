@@ -207,6 +207,10 @@ export function ProjectTransactionsView({
   });
   const transactions = data?.data ?? [];
   const meta = data?.meta;
+  const calculatedDueAmount = Math.abs(data?.totals?.dueAmount ?? 0);
+  const agreementOutstanding = Math.abs(vendorFooter?.outstanding ?? 0);
+  const outstandingAmount = Math.max(calculatedDueAmount, agreementOutstanding);
+  const isContractorVendor = vendorFooter?.vendorType === VendorType.CONTRACTOR;
 
   function handleBack() {
     if (backHref) router.push(backHref);
@@ -350,17 +354,16 @@ export function ProjectTransactionsView({
                       {formatCurrency(data.totals.paidAmount)}
                     </span>
                   </div>
-                  {vendorFooter &&
-                    vendorFooter.vendorType !== VendorType.CONTRACTOR && (
-                      <div>
-                        <span className="text-muted-foreground uppercase tracking-wide font-semibold">
-                          Outstanding{" "}
-                        </span>
-                        <span className="text-[#C9A84C] font-bold">
-                          {formatCurrency(data.totals.dueAmount)}
-                        </span>
-                      </div>
-                    )}
+                  {!isContractorVendor && outstandingAmount > 0 && (
+                    <div>
+                      <span className="text-muted-foreground uppercase tracking-wide font-semibold">
+                        Outstanding{" "}
+                      </span>
+                      <span className="text-[#C9A84C] font-bold">
+                        {formatCurrency(outstandingAmount)}
+                      </span>
+                    </div>
+                  )}
                   {vendorFooter?.vendorType === VendorType.CONTRACTOR &&
                     vendorFooter.contractAmount > 0 && (
                       <div>
