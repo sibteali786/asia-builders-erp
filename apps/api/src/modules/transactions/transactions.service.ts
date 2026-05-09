@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, IsNull, Repository } from 'typeorm';
+import { DataSource, In, IsNull, Repository } from 'typeorm';
 import {
   Transaction,
   TransactionStatus,
@@ -20,6 +20,8 @@ import {
   Document,
   DocumentEntityType,
 } from '../documents/entities/document.entity';
+import { TransactionSettlement } from './entities/transaction-settlement.entity';
+import { SettleDuesDto } from './dto/settle-dues.dto';
 
 // Replace TransactionWithCount with this
 interface RawTransactionRow {
@@ -29,6 +31,8 @@ interface RawTransactionRow {
   description: string;
   clientName: string | null;
   amount: string;
+  settledAmount: string | null;
+  txnRef: string | null;
   status: string;
   paymentMethod: string | null;
   physicalFileReference: string | null;
@@ -52,6 +56,9 @@ export class TransactionsService {
     private categoryRepo: Repository<TransactionCategory>,
     @InjectRepository(Document)
     private docRepo: Repository<Document>,
+    @InjectRepository(TransactionSettlement)
+    private settlementRepo: Repository<TransactionSettlement>,
+    private dataSource: DataSource,
   ) {}
 
   async findAll(query: {
@@ -75,6 +82,8 @@ export class TransactionsService {
         't.description                           AS description',
         't.client_name                           AS "clientName"',
         't.amount                                AS amount',
+        't.settled_amount                        AS "settledAmount"',
+        't.txn_ref                               AS "txnRef"',
         't.status                                AS status',
         't.payment_method                        AS "paymentMethod"',
         't.physical_file_reference               AS "physicalFileReference"',
@@ -140,6 +149,8 @@ export class TransactionsService {
         clientName: r.clientName ?? null,
         amount,
         status: r.status,
+        settledAmount: Number(r.settledAmount ?? 0),
+        txnRef: r.txnRef,
         paymentMethod: r.paymentMethod,
         physicalFileReference: r.physicalFileReference,
         fileCount: Number(r.fileCount ?? 0),
@@ -207,6 +218,8 @@ export class TransactionsService {
         't.description                       AS description',
         't.client_name                       AS "clientName"',
         't.amount                            AS amount',
+        't.settled_amount                    AS "settledAmount"',
+        't.txn_ref                           AS "txnRef"',
         't.status                            AS status',
         't.payment_method                    AS "paymentMethod"',
         't.physical_file_reference           AS "physicalFileReference"',
@@ -268,6 +281,8 @@ export class TransactionsService {
           ? -Math.abs(Number(r.amount))
           : Math.abs(Number(r.amount)),
       status: r.status,
+      settledAmount: Number(r.settledAmount ?? 0),
+      txnRef: r.txnRef,
       paymentMethod: r.paymentMethod,
       physicalFileReference: r.physicalFileReference,
       fileCount: Number(r.fileCount ?? 0),
@@ -281,8 +296,16 @@ export class TransactionsService {
       (acc, t) => {
         if (t.amount < 0) {
           acc.totalDebits += Math.abs(t.amount);
-          if (t.status === 'PAID') acc.paidAmount += Math.abs(t.amount);
-          else acc.dueAmount += Math.abs(t.amount);
+          if (t.status === 'PAID' || t.status === 'SETTLED') {
+            acc.paidAmount += Math.abs(t.amount);
+          } else if (t.status === 'DUE') {
+            acc.dueAmount += Math.abs(t.amount);
+          } else if (t.status === 'PARTIALLY_SETTLED') {
+            acc.dueAmount += Math.max(
+              0,
+              Math.abs(t.amount) - Number(t.settledAmount ?? 0),
+            );
+          }
         } else {
           acc.totalCredits += t.amount;
         }
@@ -388,6 +411,10 @@ export class TransactionsService {
       physicalFileReference: dto.physicalFileReference ?? null,
       notes: dto.notes ?? null,
       clientName: dto.clientName ?? null,
+      txnRef: await this.generateTxnRef(
+        dto.transactionType,
+        vendor?.name ?? null,
+      ),
       project,
       vendor,
       category,
@@ -451,12 +478,248 @@ export class TransactionsService {
     });
   }
 
+  async getOpenDues(vendorId: number, projectId: number) {
+    const rows = await this.txRepo.find({
+      where: {
+        vendor: { id: vendorId },
+        project: { id: projectId },
+        transactionType: TransactionType.EXPENSE,
+        status: In([
+          TransactionStatus.DUE,
+          TransactionStatus.PARTIALLY_SETTLED,
+        ]),
+        deletedAt: IsNull(),
+      },
+      order: { transactionDate: 'ASC', createdAt: 'ASC' },
+    });
+
+    return rows.map((t) => ({
+      id: t.id,
+      txnRef: t.txnRef,
+      description: t.description,
+      transactionDate: t.transactionDate,
+      amount: Number(t.amount),
+      settledAmount: Number(t.settledAmount),
+      remaining: Number(t.amount) - Number(t.settledAmount),
+      status: t.status,
+    }));
+  }
+
+  async settleDues(dto: SettleDuesDto, currentUser: User) {
+    const dues = await this.txRepo.find({
+      where: {
+        id: In(dto.dueTransactionIds),
+        vendor: { id: dto.vendorId },
+        project: { id: dto.projectId },
+        transactionType: TransactionType.EXPENSE,
+        status: In([
+          TransactionStatus.DUE,
+          TransactionStatus.PARTIALLY_SETTLED,
+        ]),
+        deletedAt: IsNull(),
+      },
+      order: { transactionDate: 'ASC', createdAt: 'ASC' },
+    });
+
+    if (dues.length !== dto.dueTransactionIds.length) {
+      throw new BadRequestException(
+        'One or more selected dues are invalid, already settled, or belong to a different vendor/project',
+      );
+    }
+
+    const totalRemaining = dues.reduce(
+      (sum, d) => sum + (Number(d.amount) - Number(d.settledAmount)),
+      0,
+    );
+
+    if (dto.amount > totalRemaining + 0.01) {
+      throw new BadRequestException(
+        `Payment amount (${dto.amount}) exceeds total remaining dues (${totalRemaining})`,
+      );
+    }
+
+    const vendor = await this.vendorRepo.findOne({
+      where: { id: dto.vendorId, deletedAt: IsNull() },
+    });
+    if (!vendor)
+      throw new NotFoundException(`Vendor #${dto.vendorId} not found`);
+
+    const project = await this.projectRepo.findOne({
+      where: { id: dto.projectId, deletedAt: IsNull() },
+    });
+    if (!project)
+      throw new NotFoundException(`Project #${dto.projectId} not found`);
+
+    return this.dataSource.transaction(async (manager) => {
+      const txRepo = manager.getRepository(Transaction);
+      const settlementRepo = manager.getRepository(TransactionSettlement);
+
+      const txnRef = await this.generateTxnRef(
+        TransactionType.EXPENSE,
+        vendor.name,
+      );
+      const description =
+        dto.description?.trim() ||
+        `Payment to ${vendor.name} - ${dues.length} due${dues.length > 1 ? 's' : ''}`;
+
+      const paymentTx = await txRepo.save(
+        txRepo.create({
+          transactionType: TransactionType.EXPENSE,
+          status: TransactionStatus.PAID,
+          transactionDate: dto.transactionDate as unknown as Date,
+          description,
+          amount: dto.amount,
+          paymentMethod: dto.paymentMethod ?? null,
+          chequeNumber: dto.chequeNumber ?? null,
+          physicalFileReference: dto.physicalFileReference ?? null,
+          txnRef,
+          settledAmount: 0,
+          settledAt: null,
+          project,
+          vendor,
+          createdBy: currentUser,
+        }),
+      );
+
+      let remaining = dto.amount;
+      for (const due of dues) {
+        if (remaining <= 0) break;
+
+        const dueRemaining = Number(due.amount) - Number(due.settledAmount);
+        const applied = Math.min(remaining, dueRemaining);
+        remaining -= applied;
+
+        const newSettledAmount = Number(due.settledAmount) + applied;
+        const isFullySettled =
+          Math.abs(newSettledAmount - Number(due.amount)) < 0.01;
+
+        due.settledAmount = newSettledAmount;
+        due.status = isFullySettled
+          ? TransactionStatus.SETTLED
+          : TransactionStatus.PARTIALLY_SETTLED;
+        due.settledAt = isFullySettled
+          ? (new Date(dto.transactionDate) as unknown as Date)
+          : null;
+        await txRepo.save(due);
+
+        await settlementRepo.save(
+          settlementRepo.create({
+            paymentTransaction: paymentTx,
+            dueTransaction: due,
+            amountApplied: applied,
+          }),
+        );
+      }
+
+      return paymentTx;
+    });
+  }
+
+  async getSettlementLinks(txId: number) {
+    const tx = await this.txRepo.findOne({
+      where: { id: txId, deletedAt: IsNull() },
+    });
+    if (!tx) throw new NotFoundException(`Transaction #${txId} not found`);
+
+    if (
+      [
+        TransactionStatus.DUE,
+        TransactionStatus.PARTIALLY_SETTLED,
+        TransactionStatus.SETTLED,
+      ].includes(tx.status)
+    ) {
+      const links = await this.settlementRepo.find({
+        where: { dueTransaction: { id: txId } },
+        relations: ['paymentTransaction'],
+        order: { createdAt: 'ASC' },
+      });
+
+      return {
+        direction: 'settled_by' as const,
+        txnRef: tx.txnRef,
+        status: tx.status,
+        originalAmount: Number(tx.amount),
+        settledAmount: Number(tx.settledAmount),
+        remaining: Number(tx.amount) - Number(tx.settledAmount),
+        payments: links.map((l) => ({
+          txnRef: l.paymentTransaction.txnRef,
+          description: l.paymentTransaction.description,
+          transactionDate: l.paymentTransaction.transactionDate,
+          amountApplied: Number(l.amountApplied),
+        })),
+      };
+    }
+
+    const links = await this.settlementRepo.find({
+      where: { paymentTransaction: { id: txId } },
+      relations: ['dueTransaction'],
+      order: { createdAt: 'ASC' },
+    });
+
+    if (links.length === 0) return null;
+
+    return {
+      direction: 'settled_these' as const,
+      txnRef: tx.txnRef,
+      dues: links.map((l) => ({
+        txnRef: l.dueTransaction.txnRef,
+        description: l.dueTransaction.description,
+        transactionDate: l.dueTransaction.transactionDate,
+        originalAmount: Number(l.dueTransaction.amount),
+        amountApplied: Number(l.amountApplied),
+        status: l.dueTransaction.status,
+      })),
+    };
+  }
+
   // ─── HELPERS ──────────────────────────────────────────────────────────────────
   private async assertProjectExists(projectId: number) {
     const exists = await this.projectRepo.findOne({
       where: { id: projectId, deletedAt: IsNull() },
     });
     if (!exists) throw new NotFoundException(`Project #${projectId} not found`);
+  }
+
+  private async generateTxnRef(
+    transactionType: TransactionType,
+    vendorName?: string | null,
+  ): Promise<string> {
+    const consonants = 'BCDFGHJKLMNPQRSTVWXYZ';
+    let prefix: string;
+
+    if (transactionType === TransactionType.INCOME) {
+      prefix = 'INC';
+    } else if (vendorName) {
+      const initials = vendorName
+        .toUpperCase()
+        .replace(/[^A-Z]/g, '')
+        .split('')
+        .filter((c) => consonants.includes(c))
+        .slice(0, 3)
+        .join('');
+      prefix = `EXP-${initials.padEnd(3, 'X')}`;
+    } else {
+      prefix = 'EXP-GEN';
+    }
+
+    const last = await this.txRepo
+      .createQueryBuilder('t')
+      .select('t.txn_ref', 'ref')
+      .where('t.txn_ref LIKE :pattern', { pattern: `${prefix}-%` })
+      .orderBy('t.txn_ref', 'DESC')
+      .limit(1)
+      .getRawOne<{ ref: string }>();
+
+    let seq = 1;
+    if (last?.ref) {
+      const parts = last.ref.split('-');
+      seq = parseInt(parts[parts.length - 1], 10) + 1;
+    }
+
+    const seqStr = String(seq).padStart(4, '0');
+    return transactionType === TransactionType.INCOME
+      ? `INC-${seqStr}`
+      : `${prefix}-${seqStr}`;
   }
 
   // Shapes a transaction row for the frontend
@@ -468,6 +731,8 @@ export class TransactionsService {
       description: t.description,
       clientName: t.clientName ?? null,
       status: t.status,
+      settledAmount: Number(t.settledAmount ?? 0),
+      txnRef: t.txnRef ?? null,
       amount:
         t.transactionType === TransactionType.EXPENSE
           ? -Math.abs(Number(t.amount)) // negative for expense

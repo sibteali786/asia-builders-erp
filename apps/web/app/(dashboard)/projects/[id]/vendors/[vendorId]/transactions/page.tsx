@@ -23,6 +23,7 @@ export default function ProjectVendorTransactionsPage({
     <ProjectTransactionsView
       projectId={projectId}
       vendorId={vId}
+      vendorName={vendor?.name}
       projectName={project?.name ?? agreement?.projectName ?? "Project"}
       backHref={`/projects/${projectId}`}
       backLabel={vendor?.name ?? "Vendor"}

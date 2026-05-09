@@ -68,8 +68,11 @@ export class VendorsService {
             .getRawOne<{ val: string }>(),
           this.txRepo
             .createQueryBuilder('t')
-            .select('COALESCE(SUM(t.amount), 0)', 'val')
-            .where(`${base} AND t.status = 'DUE'`, baseParams)
+            .select('COALESCE(SUM(t.amount - t.settled_amount), 0)', 'val')
+            .where(
+              `${base} AND t.status IN ('DUE', 'PARTIALLY_SETTLED')`,
+              baseParams,
+            )
             .getRawOne<{ val: string }>(),
         ]);
 
@@ -133,8 +136,11 @@ export class VendorsService {
             .getRawOne<{ val: string }>(),
           this.txRepo
             .createQueryBuilder('t')
-            .select('COALESCE(SUM(t.amount), 0)', 'val')
-            .where(`${base} AND t.status = 'DUE'`, baseParams)
+            .select('COALESCE(SUM(t.amount - t.settled_amount), 0)', 'val')
+            .where(
+              `${base} AND t.status IN ('DUE', 'PARTIALLY_SETTLED')`,
+              baseParams,
+            )
             .getRawOne<{ val: string }>(),
         ]);
 
@@ -263,11 +269,11 @@ export class VendorsService {
       AND t2.status = 'PAID'
       AND t2.deleted_at IS NULL
    )                                             AS "amountPaid"`,
-        `(SELECT COALESCE(SUM(t2.amount), 0)
+        `(SELECT COALESCE(SUM(t2.amount - t2.settled_amount), 0)
     FROM transactions t2
     WHERE t2.vendor_id = v.id
       AND t2.transaction_type = 'EXPENSE'
-      AND t2.status = 'DUE'
+      AND t2.status IN ('DUE', 'PARTIALLY_SETTLED')
       AND t2.deleted_at IS NULL
    )                                             AS outstanding`,
         `JSON_AGG(
@@ -327,8 +333,11 @@ export class VendorsService {
           .getRawOne<{ val: string }>(),
         this.txRepo
           .createQueryBuilder('t')
-          .select('COALESCE(SUM(t.amount), 0)', 'val')
-          .where(`${baseWhere} AND t.status = 'DUE'`, baseParams)
+          .select('COALESCE(SUM(t.amount - t.settled_amount), 0)', 'val')
+          .where(
+            `${baseWhere} AND t.status IN ('DUE', 'PARTIALLY_SETTLED')`,
+            baseParams,
+          )
           .getRawOne<{ val: string }>(),
         this.projectVendorRepo.count({
           where: { vendor: { id }, isActive: true },

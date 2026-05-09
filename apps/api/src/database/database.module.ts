@@ -11,6 +11,7 @@ import { Investment } from '../modules/investments/entities/investment.entity';
 import { InvestmentValueUpdate } from '../modules/investments/entities/investment-value-update.entity';
 import { Document } from '../modules/documents/entities/document.entity';
 import { VendorTypeEntity } from 'src/modules/vendors/entities/vendor-type.entity';
+import { TransactionSettlement } from '../modules/transactions/entities/transaction-settlement.entity';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { VendorTypeEntity } from 'src/modules/vendors/entities/vendor-type.entit
           Vendor,
           ProjectVendor,
           Transaction,
+          TransactionSettlement,
           TransactionCategory,
           Investment,
           InvestmentValueUpdate,

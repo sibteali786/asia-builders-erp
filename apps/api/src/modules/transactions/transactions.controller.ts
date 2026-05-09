@@ -14,6 +14,7 @@ import {
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { QueryProjectTransactionsDto } from './dto/query-project-transactions.dto';
+import { SettleDuesDto } from './dto/settle-dues.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import type { Request as ExpressRequest } from 'express';
 import { User } from '../users/entities/user.entity';
@@ -28,6 +29,26 @@ export class TransactionsController {
   @Get('transactions')
   findAllGlobal(@Query() query: QueryProjectTransactionsDto) {
     return this.txService.findAll(query);
+  }
+
+  // IMPORTANT: keep these before @Get('projects/:projectId/transactions')
+  // to avoid dynamic route segment conflicts.
+  @Get('projects/:projectId/vendors/:vendorId/open-dues')
+  getOpenDues(
+    @Param('projectId', ParseIntPipe) projectId: number,
+    @Param('vendorId', ParseIntPipe) vendorId: number,
+  ) {
+    return this.txService.getOpenDues(vendorId, projectId);
+  }
+
+  @Post('transactions/settle')
+  settleDues(@Body() dto: SettleDuesDto, @Request() req: ExpressRequest) {
+    return this.txService.settleDues(dto, req.user as User);
+  }
+
+  @Get('transactions/:id/settlements')
+  getSettlementLinks(@Param('id', ParseIntPipe) id: number) {
+    return this.txService.getSettlementLinks(id);
   }
 
   // GET /projects/:projectId/transactions  → recent 5 for sub-tab

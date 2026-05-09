@@ -5,11 +5,16 @@ import { Transaction } from './entities/transaction.entity';
 import { Project } from '../projects/entities/project.entity';
 import { Vendor } from '../vendors/entities/vendor.entity';
 import { TransactionCategory } from './entities/transaction-category.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Document } from '../documents/entities/document.entity';
+import { TransactionSettlement } from './entities/transaction-settlement.entity';
 
 describe('TransactionsService', () => {
   let service: TransactionsService;
+
+  const mockDataSource: Pick<DataSource, 'transaction'> = {
+    transaction: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -34,6 +39,14 @@ describe('TransactionsService', () => {
         {
           provide: getRepositoryToken(Document),
           useClass: Repository,
+        },
+        {
+          provide: getRepositoryToken(TransactionSettlement),
+          useClass: Repository,
+        },
+        {
+          provide: DataSource,
+          useValue: mockDataSource as DataSource,
         },
       ],
     }).compile();

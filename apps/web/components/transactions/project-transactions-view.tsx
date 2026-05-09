@@ -12,6 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useAllTransactions, type Transaction } from "@/hooks/use-transactions";
 import { TransactionModal } from "@/components/transactions/transaction-modal";
+import { SettlementModal } from "@/components/transactions/settlement-modal";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ interface VendorFooter {
 interface Props {
   projectId: number;
   vendorId?: number; // if set, filters transactions to only this vendor
+  vendorName?: string;
   projectName?: string; // shown in header subtitle
   backHref?: string; // if set, back button uses router.push; else router.back()
   backLabel?: string; // label next to back arrow
@@ -47,6 +49,8 @@ const STATUS_STYLE: Record<string, string> = {
   PAID: "bg-green-100 text-green-700",
   DUE: "bg-yellow-100 text-yellow-700",
   RECEIVED: "bg-blue-100 text-blue-700",
+  PARTIALLY_SETTLED: "bg-amber-100 text-amber-700",
+  SETTLED: "bg-emerald-100 text-emerald-700",
 };
 
 // ── Table row ─────────────────────────────────────────────────────────────────
@@ -91,7 +95,11 @@ function TxRow({ tx }: { tx: Transaction }) {
             ? "Paid"
             : tx.status === "RECEIVED"
               ? "Received"
-              : "Due"}
+              : tx.status === "SETTLED"
+                ? "Settled"
+                : tx.status === "PARTIALLY_SETTLED"
+                  ? "Partial"
+                  : "Due"}
         </span>
       </td>
       <td className="py-3.5 pr-4 text-xs text-muted-foreground">
@@ -186,6 +194,7 @@ function Pagination({
 export function ProjectTransactionsView({
   projectId,
   vendorId,
+  vendorName,
   projectName,
   backHref,
   backLabel = "Back",
@@ -196,6 +205,7 @@ export function ProjectTransactionsView({
   const [type, setType] = useState("");
   const [page, setPage] = useState(1);
   const [modalOpen, setModal] = useState(false);
+  const [settleOpen, setSettleOpen] = useState(false);
 
   const { data, isLoading, isError } = useAllTransactions(projectId, {
     search,
@@ -210,6 +220,9 @@ export function ProjectTransactionsView({
   const agreementOutstanding = Math.abs(vendorFooter?.outstanding ?? 0);
   const outstandingAmount = Math.max(calculatedDueAmount, agreementOutstanding);
   const isContractorVendor = vendorFooter?.isContractor === true;
+  const hasOpenDues = transactions.some(
+    (t) => t.status === "DUE" || t.status === "PARTIALLY_SETTLED",
+  );
 
   function handleBack() {
     if (backHref) router.push(backHref);
@@ -235,12 +248,23 @@ export function ProjectTransactionsView({
             )}
           </div>
         </div>
-        <Button
-          className="bg-[#C9A84C] hover:bg-[#b8963e] text-white rounded-full gap-1.5 shrink-0"
-          onClick={() => setModal(true)}
-        >
-          <Plus size={14} /> Add Transaction
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          {vendorId && hasOpenDues && (
+            <Button
+              variant="outline"
+              className="gap-1.5 border-[#C9A84C] text-[#C9A84C] hover:bg-[#C9A84C]/10"
+              onClick={() => setSettleOpen(true)}
+            >
+              Settle Dues
+            </Button>
+          )}
+          <Button
+            className="bg-[#C9A84C] hover:bg-[#b8963e] text-white rounded-full gap-1.5"
+            onClick={() => setModal(true)}
+          >
+            <Plus size={14} /> Add Transaction
+          </Button>
+        </div>
       </div>
 
       {/* Toolbar */}
@@ -431,6 +455,15 @@ export function ProjectTransactionsView({
         projectId={projectId}
         lockedVendorId={vendorId}
       />
+      {vendorId && (
+        <SettlementModal
+          open={settleOpen}
+          onOpenChange={setSettleOpen}
+          projectId={projectId}
+          vendorId={vendorId}
+          vendorName={vendorName ?? "Vendor"}
+        />
+      )}
     </div>
   );
 }

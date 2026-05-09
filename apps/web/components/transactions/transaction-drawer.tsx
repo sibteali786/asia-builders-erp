@@ -23,7 +23,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { TransactionModal } from "./transaction-modal";
-import { useDeleteTransaction } from "@/hooks/use-transactions";
+import {
+  TransactionStatus,
+  useDeleteTransaction,
+  useSettlementLinks,
+} from "@/hooks/use-transactions";
 import type { GlobalTransaction } from "@/hooks/use-transactions";
 import { useAuthStore } from "@/store/auth.store";
 import { formatCurrency } from "@/lib/utils";
@@ -53,6 +57,15 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
   const deleteTransaction = useDeleteTransaction();
   const { user } = useAuthStore();
   const isOwner = user?.role === "OWNER";
+  const needsSettlementInfo = [
+    "DUE",
+    "PARTIALLY_SETTLED",
+    "SETTLED",
+    "PAID",
+  ].includes(tx?.status ?? "");
+  const { data: settlementData } = useSettlementLinks(
+    needsSettlementInfo ? (tx?.id ?? null) : null,
+  );
 
   function handleDelete() {
     if (!tx) return;
@@ -90,6 +103,11 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
                 >
                   {tx.transactionType}
                 </span>
+                {tx.txnRef && (
+                  <p className="font-mono text-xs text-muted-foreground mt-1">
+                    {tx.txnRef}
+                  </p>
+                )}
                 <p className="text-2xl font-bold text-[#14181F] mt-3">
                   {tx.amount < 0 ? "-" : "+"}${formatCurrency(tx.amount)}
                 </p>
@@ -120,6 +138,134 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
                   </p>
                 )}
               </div>
+
+              {settlementData && (
+                <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2">
+                  {settlementData.direction === "settled_by" && (
+                    <>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
+                        Settlement History
+                      </p>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-muted-foreground">
+                          Original Amount
+                        </span>
+                        <span className="font-semibold">
+                          {formatCurrency(settlementData.originalAmount)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-muted-foreground">
+                          Settled So Far
+                        </span>
+                        <span className="font-semibold text-green-600">
+                          {formatCurrency(settlementData.settledAmount)}
+                        </span>
+                      </div>
+                      {settlementData.remaining > 0 && (
+                        <div className="flex justify-between text-xs mb-2">
+                          <span className="text-muted-foreground">
+                            Remaining
+                          </span>
+                          <span className="font-semibold text-amber-600">
+                            {formatCurrency(settlementData.remaining)}
+                          </span>
+                        </div>
+                      )}
+                      {settlementData.payments.length > 0 && (
+                        <div className="border-t border-border pt-2 space-y-1.5">
+                          <p className="text-xs text-muted-foreground font-medium">
+                            Settled by:
+                          </p>
+                          {settlementData.payments.map(
+                            (
+                              p: {
+                                txnRef: string | null;
+                                description: string;
+                                amountApplied: number;
+                              },
+                              i: number,
+                            ) => (
+                              <div
+                                key={i}
+                                className="flex items-center justify-between text-xs"
+                              >
+                                <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                  <span className="font-mono text-muted-foreground whitespace-nowrap shrink-0">
+                                    {p.txnRef ?? "-"}
+                                  </span>
+                                  <span className="text-foreground truncate">
+                                    {p.description}
+                                  </span>
+                                </div>
+                                <span className="text-green-600 font-semibold shrink-0 ml-2">
+                                  {formatCurrency(p.amountApplied)}
+                                </span>
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {settlementData.direction === "settled_these" && (
+                    <>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
+                        Dues Settled by This Payment
+                      </p>
+                      <div className="space-y-1.5">
+                        {settlementData.dues.map(
+                          (
+                            d: {
+                              txnRef: string | null;
+                              description: string;
+                              amountApplied: number;
+                              status: TransactionStatus;
+                            },
+                            i: number,
+                          ) => (
+                            <div
+                              key={i}
+                              className="flex items-center justify-between text-xs"
+                            >
+                              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                <span className="font-mono text-muted-foreground whitespace-nowrap shrink-0">
+                                  {d.txnRef ?? "-"}
+                                </span>
+                                <span className="text-foreground truncate">
+                                  {d.description}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0 ml-2">
+                                <span className="text-green-600 font-semibold">
+                                  {formatCurrency(d.amountApplied)}
+                                </span>
+                                <span
+                                  className={`px-1.5 py-0.5 rounded-full font-medium
+                                    ${
+                                      d.status === "SETTLED"
+                                        ? "bg-emerald-100 text-emerald-700"
+                                        : d.status === "PARTIALLY_SETTLED"
+                                          ? "bg-amber-100 text-amber-700"
+                                          : "bg-yellow-100 text-yellow-700"
+                                    }`}
+                                >
+                                  {d.status === "SETTLED"
+                                    ? "Settled"
+                                    : d.status === "PARTIALLY_SETTLED"
+                                      ? "Partial"
+                                      : "Due"}
+                                </span>
+                              </div>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-start gap-2 bg-[#F6F5F44D] border border-[#EBE9E566] p-3 rounded-[12px]">

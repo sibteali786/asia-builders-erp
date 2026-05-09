@@ -7,12 +7,14 @@ import { TransactionsController } from './transactions.controller';
 import { TransactionsService } from './transactions.service';
 import { Transaction } from './entities/transaction.entity';
 import { Document } from '../documents/entities/document.entity';
+import { TransactionSettlement } from './entities/transaction-settlement.entity';
 
 @Module({
   imports: [
     // Register all entities this module needs to query
     TypeOrmModule.forFeature([
       Transaction,
+      TransactionSettlement,
       TransactionCategory,
       Project,
       Vendor,

@@ -7,6 +7,8 @@ export enum TransactionStatus {
   PAID = "PAID",
   DUE = "DUE",
   RECEIVED = "RECEIVED",
+  PARTIALLY_SETTLED = "PARTIALLY_SETTLED",
+  SETTLED = "SETTLED",
 }
 
 export interface GlobalTransaction extends Transaction {
@@ -29,6 +31,8 @@ export interface Transaction {
   clientName: string | null;
   amount: number; // negative for expense, positive for income (formatted by backend)
   status: TransactionStatus;
+  settledAmount: number;
+  txnRef: string | null;
   vendor: { id: number; name: string } | null;
   paymentMethod: string | null;
   physicalFileReference: string | null;
@@ -293,5 +297,65 @@ export function useUpdateTransaction() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["transactions"], exact: false });
     },
+  });
+}
+
+export function useOpenDues(projectId: number, vendorId: number) {
+  return useQuery({
+    queryKey: ["transactions", "open-dues", projectId, vendorId],
+    queryFn: async () => {
+      const res = await apiClient.get<
+        {
+          id: number;
+          txnRef: string | null;
+          description: string;
+          transactionDate: string;
+          amount: number;
+          settledAmount: number;
+          remaining: number;
+          status: TransactionStatus;
+        }[]
+      >(`/projects/${projectId}/vendors/${vendorId}/open-dues`);
+      return res.data;
+    },
+    enabled: !!projectId && !!vendorId,
+    staleTime: 0,
+  });
+}
+
+export function useSettleDues(projectId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: {
+      projectId: number;
+      vendorId: number;
+      dueTransactionIds: number[];
+      amount: number;
+      transactionDate: string;
+      description?: string;
+      paymentMethod?: string;
+      chequeNumber?: string;
+      physicalFileReference?: string;
+    }) => {
+      const res = await apiClient.post("/transactions/settle", payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["transactions"], exact: false });
+      qc.invalidateQueries({ queryKey: ["vendors"], exact: false });
+      qc.invalidateQueries({ queryKey: ["projects", projectId] });
+    },
+  });
+}
+
+export function useSettlementLinks(txId: number | null) {
+  return useQuery({
+    queryKey: ["transactions", txId, "settlements"],
+    queryFn: async () => {
+      const res = await apiClient.get(`/transactions/${txId}/settlements`);
+      return res.data;
+    },
+    enabled: !!txId,
+    staleTime: 0,
   });
 }

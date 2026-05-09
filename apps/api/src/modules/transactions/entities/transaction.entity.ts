@@ -1,9 +1,10 @@
-import { Column, Entity, ManyToOne, JoinColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { SoftDeleteBaseEntity } from '../../../common/entities/base.entity';
 import { Project } from '../../projects/entities/project.entity';
 import { Vendor } from '../../vendors/entities/vendor.entity';
 import { TransactionCategory } from './transaction-category.entity';
 import { User } from '../../users/entities/user.entity';
+import { TransactionSettlement } from './transaction-settlement.entity';
 
 export enum TransactionType {
   INCOME = 'INCOME',
@@ -20,6 +21,8 @@ export enum TransactionStatus {
   PAID = 'PAID',
   DUE = 'DUE',
   RECEIVED = 'RECEIVED',
+  PARTIALLY_SETTLED = 'PARTIALLY_SETTLED',
+  SETTLED = 'SETTLED',
 }
 
 @Entity('transactions')
@@ -77,6 +80,27 @@ export class Transaction extends SoftDeleteBaseEntity {
   @Column({ name: 'client_name', nullable: true, type: 'varchar', length: 255 })
   clientName: string | null;
 
+  @Column({
+    name: 'txn_ref',
+    nullable: true,
+    unique: true,
+    type: 'varchar',
+    length: 20,
+  })
+  txnRef: string | null;
+
+  @Column({
+    name: 'settled_amount',
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    default: 0,
+  })
+  settledAmount: number;
+
+  @Column({ name: 'settled_at', type: 'timestamp', nullable: true })
+  settledAt: Date | null;
+
   // Relations
   @ManyToOne(() => Project, (p) => p.transactions)
   @JoinColumn({ name: 'project_id' })
@@ -99,4 +123,10 @@ export class Transaction extends SoftDeleteBaseEntity {
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'updated_by' })
   updatedBy: User | null;
+
+  @OneToMany(() => TransactionSettlement, (s) => s.paymentTransaction)
+  settlementsGiven: TransactionSettlement[];
+
+  @OneToMany(() => TransactionSettlement, (s) => s.dueTransaction)
+  settlementsReceived: TransactionSettlement[];
 }
