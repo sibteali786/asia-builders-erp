@@ -12,10 +12,12 @@ import { VendorsModule } from './modules/vendors/vendors.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { InvestmentsModule } from './modules/investments/investments.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    CommonModule,
     DatabaseModule,
     AuthModule,
     UsersModule,

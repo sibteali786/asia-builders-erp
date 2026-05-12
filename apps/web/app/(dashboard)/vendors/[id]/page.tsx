@@ -33,6 +33,7 @@ import { useQuery } from "@tanstack/react-query";
 import apiClient from "@/lib/axios";
 import { VendorModal } from "@/components/vendors/vendor-modal";
 import { AssignProjectModal } from "@/components/vendors/assign-project-modal";
+import { useIsReadOnly } from "@/hooks/use-is-read-only";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -335,6 +336,7 @@ function fileColor(mime: string) {
 
 function DocumentsTab({ vendorId }: { vendorId: number }) {
   const upload = useUploadDocument();
+  const isReadOnly = useIsReadOnly();
 
   const { data: docs = [], isLoading } = useQuery({
     queryKey: ["documents", "vendor", vendorId],
@@ -395,25 +397,27 @@ function DocumentsTab({ vendorId }: { vendorId: number }) {
         ))}
 
         {/* Upload card */}
-        <label
-          className={`rounded-xl border border-dashed border-border p-4 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:bg-accent cursor-pointer transition-colors min-h-[11rem] ${upload.isPending ? "opacity-60 pointer-events-none" : ""}`}
-        >
-          {upload.isPending ? (
-            <Loader2 size={20} className="animate-spin" />
-          ) : (
-            <Plus size={20} />
-          )}
-          <p className="text-xs font-medium">
-            {upload.isPending ? "Uploading..." : "Upload File"}
-          </p>
-          <input
-            type="file"
-            className="hidden"
-            multiple
-            accept=".pdf,.jpg,.jpeg,.png,.webp,.docx"
-            onChange={(e) => e.target.files && handleUpload(e.target.files)}
-          />
-        </label>
+        {!isReadOnly && (
+          <label
+            className={`rounded-xl border border-dashed border-border p-4 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:bg-accent cursor-pointer transition-colors min-h-[11rem] ${upload.isPending ? "opacity-60 pointer-events-none" : ""}`}
+          >
+            {upload.isPending ? (
+              <Loader2 size={20} className="animate-spin" />
+            ) : (
+              <Plus size={20} />
+            )}
+            <p className="text-xs font-medium">
+              {upload.isPending ? "Uploading..." : "Upload File"}
+            </p>
+            <input
+              type="file"
+              className="hidden"
+              multiple
+              accept=".pdf,.jpg,.jpeg,.png,.webp,.docx"
+              onChange={(e) => e.target.files && handleUpload(e.target.files)}
+            />
+          </label>
+        )}
       </div>
 
       <p className="text-sm text-muted-foreground">
@@ -437,6 +441,7 @@ export default function VendorDetailPage({
   const { data: vendor, isLoading, isError } = useVendorDetail(vendorId);
   const [editOpen, setEditOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
+  const isReadOnly = useIsReadOnly();
 
   if (isLoading)
     return (
@@ -489,13 +494,15 @@ export default function VendorDetailPage({
             </div>
           </div>
         </div>
-        <Button
-          variant="outline"
-          className="gap-2 shrink-0 border-none shadow-sm"
-          onClick={() => setEditOpen(true)}
-        >
-          <Pencil size={14} /> Edit Profile
-        </Button>
+        {!isReadOnly && (
+          <Button
+            variant="outline"
+            className="gap-2 shrink-0 border-none shadow-sm"
+            onClick={() => setEditOpen(true)}
+          >
+            <Pencil size={14} /> Edit Profile
+          </Button>
+        )}
       </div>
 
       {/* Stat cards row — mirrors ProjectStats */}
@@ -688,13 +695,15 @@ export default function VendorDetailPage({
             ))}
           </TabsList>
 
-          <Button
-            size="sm"
-            onClick={() => setAssignOpen(true)}
-            className="bg-[#C9A84C] hover:bg-[#b8963e] text-white rounded-full gap-1.5"
-          >
-            <Plus size={13} /> New Agreement
-          </Button>
+          {!isReadOnly && (
+            <Button
+              size="sm"
+              onClick={() => setAssignOpen(true)}
+              className="bg-[#C9A84C] hover:bg-[#b8963e] text-white rounded-full gap-1.5"
+            >
+              <Plus size={13} /> New Agreement
+            </Button>
+          )}
         </div>
 
         <div className="mt-5">
@@ -711,13 +720,21 @@ export default function VendorDetailPage({
       </Tabs>
 
       {/* Modals */}
-      <VendorModal open={editOpen} onOpenChange={setEditOpen} vendor={vendor} />
-      <AssignProjectModal
-        open={assignOpen}
-        onOpenChange={setAssignOpen}
-        vendorId={vendorId}
-        isContractor={vendor.isContractor}
-      />
+      {!isReadOnly && (
+        <>
+          <VendorModal
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            vendor={vendor}
+          />
+          <AssignProjectModal
+            open={assignOpen}
+            onOpenChange={setAssignOpen}
+            vendorId={vendorId}
+            isContractor={vendor.isContractor}
+          />
+        </>
+      )}
     </div>
   );
 }

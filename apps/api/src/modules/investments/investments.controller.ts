@@ -13,6 +13,9 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 import { InvestmentsService } from './investments.service';
 import { CreateInvestmentDto } from './dto/create-investment.dto';
 import { UpdateInvestmentDto } from './dto/update-investment.dto';
@@ -31,7 +34,7 @@ class UpdateStatusDto {
 }
 
 @ApiTags('Investments')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('investments')
 export class InvestmentsController {
   constructor(private readonly investmentsService: InvestmentsService) {}
@@ -48,6 +51,7 @@ export class InvestmentsController {
 
   @ApiOperation({ summary: 'Create a new investment' })
   @ApiResponse({ status: 201, description: 'Investment created successfully' })
+  @Roles(UserRole.OWNER, UserRole.ACCOUNTANT)
   @Post()
   create(@Body() dto: CreateInvestmentDto, @Request() req: ExpressRequest) {
     return this.investmentsService.create(dto, req.user as User);
@@ -66,6 +70,7 @@ export class InvestmentsController {
 
   @ApiOperation({ summary: 'Update investment' })
   @ApiResponse({ status: 200, description: 'Investment updated successfully' })
+  @Roles(UserRole.OWNER, UserRole.ACCOUNTANT)
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -77,6 +82,7 @@ export class InvestmentsController {
 
   @ApiOperation({ summary: 'Update investment status (e.g. mark as Matured)' })
   @ApiResponse({ status: 200, description: 'Status updated successfully' })
+  @Roles(UserRole.OWNER, UserRole.ACCOUNTANT)
   @Patch(':id/status')
   updateStatus(
     @Param('id', ParseIntPipe) id: number,
@@ -95,6 +101,7 @@ export class InvestmentsController {
     status: 201,
     description: 'Valuation logged and current value updated',
   })
+  @Roles(UserRole.OWNER, UserRole.ACCOUNTANT)
   @Post(':id/value-updates')
   addValueUpdate(
     @Param('id', ParseIntPipe) id: number,
@@ -106,6 +113,7 @@ export class InvestmentsController {
 
   @ApiOperation({ summary: 'Delete an investment' })
   @ApiResponse({ status: 200, description: 'Investment deleted' })
+  @Roles(UserRole.OWNER, UserRole.ACCOUNTANT)
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.investmentsService.remove(id);

@@ -23,6 +23,8 @@ export function DashboardHome() {
     useState<ProjectDashboardFilter>("all");
 
   const isAccountant = role === "ACCOUNTANT";
+  const isReviewer = role === "REVIEWER";
+  const useAccountantLayout = isAccountant || isReviewer;
 
   return (
     <div className="space-y-6">
@@ -54,7 +56,7 @@ export function DashboardHome() {
           Overview
         </p>
         <StatsSection
-          variant={isAccountant ? "accountant" : "owner"}
+          variant={useAccountantLayout ? "accountant" : "owner"}
           projectFilter={projectFilter}
         />
       </section>
@@ -68,7 +70,7 @@ export function DashboardHome() {
           Analytics &amp; Activity
         </p>
 
-        {isAccountant ? (
+        {useAccountantLayout ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <RecentTransactionsSection projectFilter={projectFilter} />
             <UpcomingPaymentsSection projectFilter={projectFilter} />

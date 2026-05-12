@@ -17,6 +17,8 @@ import {
 import type { Request as ExpressRequest } from 'express';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { QueryUsersDto } from './dto/query-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateMyProfileDto } from './dto/update-my-profile.dto';
@@ -29,10 +31,11 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 
 @ApiTags('Users')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('users')
 export class UsersController {
   constructor(private userService: UsersService) {}
@@ -41,7 +44,6 @@ export class UsersController {
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({ status: 200, description: 'Current user details' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @UseGuards(JwtAuthGuard)
   getMe(@Request() req: ExpressRequest) {
     return this.userService.getMe((req.user as User).id);
   }
@@ -50,7 +52,6 @@ export class UsersController {
   @ApiOperation({ summary: 'Update current user profile details' })
   @ApiResponse({ status: 200, description: 'Profile updated' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @UseGuards(JwtAuthGuard)
   updateMe(@Request() req: ExpressRequest, @Body() dto: UpdateMyProfileDto) {
     return this.userService.updateMe((req.user as User).id, dto);
   }
@@ -69,7 +70,6 @@ export class UsersController {
   @ApiResponse({ status: 201, description: 'Profile picture uploaded' })
   @ApiResponse({ status: 400, description: 'Invalid file or payload' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file', { storage: undefined }))
   uploadAvatar(
     @Request() req: ExpressRequest,
@@ -83,7 +83,6 @@ export class UsersController {
   @ApiOperation({ summary: 'Get paginated list of users' })
   @ApiResponse({ status: 200, description: 'List of users' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @UseGuards(JwtAuthGuard)
   findAll(@Query() queryDto: QueryUsersDto) {
     return this.userService.findAll(queryDto);
   }
@@ -93,7 +92,6 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'User found' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @UseGuards(JwtAuthGuard)
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.userService.findOne(id);
   }
@@ -103,7 +101,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'User updated' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.OWNER)
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
     return this.userService.update(id, dto);
   }
@@ -113,7 +111,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'User deactivated' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.OWNER)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.userService.remove(id);
   }

@@ -30,6 +30,7 @@ import {
 } from "@/hooks/use-transactions";
 import type { GlobalTransaction } from "@/hooks/use-transactions";
 import { useAuthStore } from "@/store/auth.store";
+import { useIsReadOnly } from "@/hooks/use-is-read-only";
 import { formatCurrency } from "@/lib/utils";
 
 interface Props {
@@ -57,6 +58,7 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
   const deleteTransaction = useDeleteTransaction();
   const { user } = useAuthStore();
   const isOwner = user?.role === "OWNER";
+  const isReadOnly = useIsReadOnly();
   const needsSettlementInfo = [
     "DUE",
     "PARTIALLY_SETTLED",
@@ -361,21 +363,23 @@ export function TransactionDrawer({ transaction: tx, open, onClose }: Props) {
             </div>
 
             {/* Footer */}
-            <div className="p-6 border-t border-border flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1 gap-2 text-[#14181F]"
-                onClick={() => setEditOpen(true)}
-              >
-                <Pencil size={14} /> Edit
-              </Button>
-              <Button
-                className="flex-1 gap-2 bg-red-500 hover:bg-red-600 text-white"
-                onClick={() => setDeleteOpen(true)}
-              >
-                <Trash2 size={14} /> Delete
-              </Button>
-            </div>
+            {!isReadOnly && (
+              <div className="p-6 border-t border-border flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1 gap-2 text-[#14181F]"
+                  onClick={() => setEditOpen(true)}
+                >
+                  <Pencil size={14} /> Edit
+                </Button>
+                <Button
+                  className="flex-1 gap-2 bg-red-500 hover:bg-red-600 text-white"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash2 size={14} /> Delete
+                </Button>
+              </div>
+            )}
           </>
         )}
       </div>

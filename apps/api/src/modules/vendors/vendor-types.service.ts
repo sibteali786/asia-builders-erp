@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,7 +7,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VendorTypeEntity } from './entities/vendor-type.entity';
 import { CreateVendorTypeDto } from './dto/create-vendor-type.dto';
-import { User, UserRole } from '../users/entities/user.entity';
 
 @Injectable()
 export class VendorTypesService {
@@ -24,16 +22,7 @@ export class VendorTypesService {
     });
   }
 
-  async create(
-    dto: CreateVendorTypeDto,
-    user: User,
-  ): Promise<VendorTypeEntity> {
-    if (user.role === UserRole.REVIEWER) {
-      throw new ForbiddenException(
-        'You do not have permission to create vendor types',
-      );
-    }
-
+  async create(dto: CreateVendorTypeDto): Promise<VendorTypeEntity> {
     const slug = dto.label.trim().toUpperCase().replace(/\s+/g, '_');
     const existing = await this.repo.findOne({ where: { slug } });
     if (existing) {
@@ -51,10 +40,7 @@ export class VendorTypesService {
     );
   }
 
-  async remove(id: number, user: User): Promise<VendorTypeEntity> {
-    if (user.role !== UserRole.OWNER) {
-      throw new ForbiddenException('Only owners can delete vendor types');
-    }
+  async remove(id: number): Promise<VendorTypeEntity> {
     const type = await this.repo.findOne({ where: { id } });
     if (!type) throw new NotFoundException('Vendor type not found');
     if (type.isSystemDefined) {

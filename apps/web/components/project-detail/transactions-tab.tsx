@@ -8,6 +8,7 @@ import { TransactionModal } from "@/components/transactions/transaction-modal";
 import { Button } from "@/components/ui/button";
 import type { Transaction } from "@/hooks/use-transactions";
 import { formatCurrency } from "@/lib/utils";
+import { useIsReadOnly } from "@/hooks/use-is-read-only";
 
 const STATUS_STYLE: Record<string, string> = {
   PAID: "bg-green-100 text-green-700",
@@ -78,6 +79,7 @@ function TxRow({ tx }: { tx: Transaction }) {
 export function TransactionsTab({ projectId }: { projectId: number }) {
   const [modalOpen, setModalOpen] = useState(false);
   const { data: transactions, isLoading } = useRecentTransactions(projectId);
+  const isReadOnly = useIsReadOnly();
 
   return (
     <div className="space-y-4">
@@ -91,13 +93,15 @@ export function TransactionsTab({ projectId }: { projectId: number }) {
               View All
             </Button>
           </Link>
-          <Button
-            size="sm"
-            className="bg-[#C9A84C] hover:bg-[#b8963e] text-white gap-1.5"
-            onClick={() => setModalOpen(true)}
-          >
-            <Plus size={13} /> Add Transaction
-          </Button>
+          {!isReadOnly && (
+            <Button
+              size="sm"
+              className="bg-[#C9A84C] hover:bg-[#b8963e] text-white gap-1.5"
+              onClick={() => setModalOpen(true)}
+            >
+              <Plus size={13} /> Add Transaction
+            </Button>
+          )}
         </div>
       </div>
 
@@ -143,11 +147,13 @@ export function TransactionsTab({ projectId }: { projectId: number }) {
         )}
       </div>
 
-      <TransactionModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        projectId={projectId}
-      />
+      {!isReadOnly && (
+        <TransactionModal
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          projectId={projectId}
+        />
+      )}
     </div>
   );
 }

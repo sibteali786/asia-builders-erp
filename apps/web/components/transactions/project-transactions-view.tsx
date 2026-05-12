@@ -15,6 +15,7 @@ import { TransactionModal } from "@/components/transactions/transaction-modal";
 import { SettlementModal } from "@/components/transactions/settlement-modal";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
+import { useIsReadOnly } from "@/hooks/use-is-read-only";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -223,6 +224,7 @@ export function ProjectTransactionsView({
   const hasOpenDues = transactions.some(
     (t) => t.status === "DUE" || t.status === "PARTIALLY_SETTLED",
   );
+  const isReadOnly = useIsReadOnly();
 
   function handleBack() {
     if (backHref) router.push(backHref);
@@ -249,7 +251,7 @@ export function ProjectTransactionsView({
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {vendorId && hasOpenDues && (
+          {vendorId && hasOpenDues && !isReadOnly && (
             <Button
               variant="outline"
               className="gap-1.5 border-[#C9A84C] text-[#C9A84C] hover:bg-[#C9A84C]/10"
@@ -258,12 +260,14 @@ export function ProjectTransactionsView({
               Settle Dues
             </Button>
           )}
-          <Button
-            className="bg-[#C9A84C] hover:bg-[#b8963e] text-white rounded-full gap-1.5"
-            onClick={() => setModal(true)}
-          >
-            <Plus size={14} /> Add Transaction
-          </Button>
+          {!isReadOnly && (
+            <Button
+              className="bg-[#C9A84C] hover:bg-[#b8963e] text-white rounded-full gap-1.5"
+              onClick={() => setModal(true)}
+            >
+              <Plus size={14} /> Add Transaction
+            </Button>
+          )}
         </div>
       </div>
 
@@ -449,13 +453,15 @@ export function ProjectTransactionsView({
         )}
       </div>
 
-      <TransactionModal
-        open={modalOpen}
-        onOpenChange={setModal}
-        projectId={projectId}
-        lockedVendorId={vendorId}
-      />
-      {vendorId && (
+      {!isReadOnly && (
+        <TransactionModal
+          open={modalOpen}
+          onOpenChange={setModal}
+          projectId={projectId}
+          lockedVendorId={vendorId}
+        />
+      )}
+      {vendorId && !isReadOnly && (
         <SettlementModal
           open={settleOpen}
           onOpenChange={setSettleOpen}

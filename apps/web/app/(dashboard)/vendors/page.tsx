@@ -6,11 +6,13 @@ import { useVendors } from "@/hooks/use-vendors";
 import { VendorCard } from "@/components/vendors/vendor-card";
 import { VendorModal } from "@/components/vendors/vendor-modal";
 import { Button } from "@/components/ui/button";
+import { useIsReadOnly } from "@/hooks/use-is-read-only";
 
 export default function VendorsPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [addOpen, setAddOpen] = useState(false);
+  const isReadOnly = useIsReadOnly();
 
   const { data, isLoading, isError } = useVendors({ search, page });
   const vendors = data?.data ?? [];
@@ -35,13 +37,17 @@ export default function VendorsPage() {
             className="w-full rounded-lg border border-input bg-background pl-9 pr-4 py-2.5 text-sm outline-none focus:border-[#C9A84C] focus:ring-2 focus:ring-[#C9A84C]/20 transition placeholder:text-muted-foreground"
           />
         </div>
-        <Button
-          onClick={() => setAddOpen(true)}
-          className="bg-[#C9A84C] hover:bg-[#b8963e] text-white rounded-full gap-1.5"
-        >
-          <Plus size={15} /> Add Vendor
-        </Button>
-        <VendorModal open={addOpen} onOpenChange={setAddOpen} />
+        {!isReadOnly && (
+          <>
+            <Button
+              onClick={() => setAddOpen(true)}
+              className="bg-[#C9A84C] hover:bg-[#b8963e] text-white rounded-full gap-1.5"
+            >
+              <Plus size={15} /> Add Vendor
+            </Button>
+            <VendorModal open={addOpen} onOpenChange={setAddOpen} />
+          </>
+        )}
       </div>
 
       {/* Loading skeletons */}

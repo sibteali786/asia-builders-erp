@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useProjectVendors } from "@/hooks/use-project-vendors";
 import { formatCurrency } from "@/lib/utils";
 import { AssignVendorModal } from "@/components/project-detail/assign-vendor-modal";
+import { useIsReadOnly } from "@/hooks/use-is-read-only";
 
 function formatTypeSlug(slug: string) {
   return slug
@@ -28,6 +29,7 @@ export function VendorsTab({ projectId }: { projectId: number }) {
   const { data: vendors, isLoading } = useProjectVendors(projectId);
   const [assignOpen, setAssignOpen] = useState(false);
   const assignedVendorIds = vendors?.map((vendor) => vendor.vendorId) ?? [];
+  const isReadOnly = useIsReadOnly();
 
   if (isLoading)
     return (
@@ -125,23 +127,27 @@ export function VendorsTab({ projectId }: { projectId: number }) {
       ))}
 
       {/* Assign New Vendor placeholder */}
-      <button
-        type="button"
-        onClick={() => setAssignOpen(true)}
-        className="rounded-xl border border-dashed border-border p-5 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:bg-accent cursor-pointer transition-colors min-h-44"
-      >
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
-          <Link2 size={16} />
-        </span>
-        <p className="text-sm font-medium">Assign New Vendor</p>
-      </button>
+      {!isReadOnly && (
+        <button
+          type="button"
+          onClick={() => setAssignOpen(true)}
+          className="rounded-xl border border-dashed border-border p-5 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:bg-accent cursor-pointer transition-colors min-h-44"
+        >
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
+            <Link2 size={16} />
+          </span>
+          <p className="text-sm font-medium">Assign New Vendor</p>
+        </button>
+      )}
 
-      <AssignVendorModal
-        open={assignOpen}
-        onOpenChange={setAssignOpen}
-        projectId={projectId}
-        assignedVendorIds={assignedVendorIds}
-      />
+      {!isReadOnly && (
+        <AssignVendorModal
+          open={assignOpen}
+          onOpenChange={setAssignOpen}
+          projectId={projectId}
+          assignedVendorIds={assignedVendorIds}
+        />
+      )}
     </div>
   );
 }

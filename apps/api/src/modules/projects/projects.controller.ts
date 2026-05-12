@@ -13,10 +13,12 @@ import {
 } from '@nestjs/common';
 import type { Request as ExpressRequest } from 'express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { ProjectsService } from './projects.service';
 import { QueryProjectsDto } from './dto/query-projects.dto';
 import { CreateProjectDto } from './dto/create-project.dto';
-import { User } from '../users/entities/user.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -26,7 +28,7 @@ import {
 
 @ApiTags('Projects')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('projects')
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
@@ -54,6 +56,7 @@ export class ProjectsController {
   @ApiResponse({ status: 201, description: 'Project created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @Roles(UserRole.OWNER, UserRole.ACCOUNTANT)
   @Post()
   create(@Body() dto: CreateProjectDto, @Request() req: ExpressRequest) {
     return this.projectsService.create(dto, req.user as User);
@@ -65,6 +68,7 @@ export class ProjectsController {
   @ApiResponse({ status: 400, description: 'Invalid input' })
   @ApiResponse({ status: 404, description: 'Project not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @Roles(UserRole.OWNER, UserRole.ACCOUNTANT)
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -79,11 +83,9 @@ export class ProjectsController {
   @ApiResponse({ status: 200, description: 'Project deleted successfully' })
   @ApiResponse({ status: 404, description: 'Project not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @Roles(UserRole.OWNER)
   @Delete(':id')
-  remove(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req: ExpressRequest,
-  ) {
-    return this.projectsService.remove(id, req.user as User);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.projectsService.remove(id);
   }
 }

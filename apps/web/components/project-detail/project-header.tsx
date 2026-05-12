@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ProjectModal } from "@/components/projects/project-modal";
 import type { ProjectDetail } from "@/hooks/use-project-detail";
+import { useIsReadOnly } from "@/hooks/use-is-read-only";
 
 const STATUS_STYLES: Record<string, string> = {
   ACTIVE: "bg-green-100 text-green-700",
@@ -31,6 +32,7 @@ function formatDate(d: string) {
 export function ProjectHeader({ project }: { project: ProjectDetail }) {
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
+  const isReadOnly = useIsReadOnly();
 
   return (
     <>
@@ -55,13 +57,15 @@ export function ProjectHeader({ project }: { project: ProjectDetail }) {
           </div>
         </div>
 
-        <Button
-          variant="outline"
-          className="gap-2 shrink-0 border-none shadow-sm"
-          onClick={() => setEditOpen(true)}
-        >
-          <Pencil size={14} /> Edit Project
-        </Button>
+        {!isReadOnly && (
+          <Button
+            variant="outline"
+            className="gap-2 shrink-0 border-none shadow-sm"
+            onClick={() => setEditOpen(true)}
+          >
+            <Pencil size={14} /> Edit Project
+          </Button>
+        )}
       </div>
 
       {/* Info strip */}
@@ -111,11 +115,13 @@ export function ProjectHeader({ project }: { project: ProjectDetail }) {
         </div>
       </div>
 
-      <ProjectModal
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        project={project}
-      />
+      {!isReadOnly && (
+        <ProjectModal
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          project={project}
+        />
+      )}
     </>
   );
 }

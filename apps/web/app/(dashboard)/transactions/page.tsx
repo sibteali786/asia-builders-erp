@@ -16,6 +16,7 @@ import {
   useGlobalTransactions,
 } from "@/hooks/use-transactions";
 import { formatCurrency } from "@/lib/utils";
+import { useIsReadOnly } from "@/hooks/use-is-read-only";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatDate(d: string) {
@@ -129,6 +130,7 @@ export default function TransactionsPage() {
   const [selected, setSelected] = useState<GlobalTransaction | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const isReadOnly = useIsReadOnly();
 
   const { data, isLoading, isError } = useGlobalTransactions({
     search,
@@ -172,12 +174,14 @@ export default function TransactionsPage() {
         </div>
 
         {/* Add Transaction — no projectId needed here; modal handles project selection */}
-        <Button
-          className="bg-[#C9A84C] hover:bg-[#b8963e] text-white rounded-full gap-1.5 shrink-0"
-          onClick={() => setModalOpen(true)}
-        >
-          <Plus size={14} /> Add Transaction
-        </Button>
+        {!isReadOnly && (
+          <Button
+            className="bg-[#C9A84C] hover:bg-[#b8963e] text-white rounded-full gap-1.5 shrink-0"
+            onClick={() => setModalOpen(true)}
+          >
+            <Plus size={14} /> Add Transaction
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -318,7 +322,7 @@ export default function TransactionsPage() {
       />
 
       {/* Add Transaction modal — no projectId since it's global; modal has project selector */}
-      {modalOpen && (
+      {!isReadOnly && modalOpen && (
         <TransactionModal
           open={modalOpen}
           onOpenChange={setModalOpen}

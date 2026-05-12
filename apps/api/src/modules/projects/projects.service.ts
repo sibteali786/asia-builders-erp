@@ -1,13 +1,9 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Project, ProjectStatus } from './entities/project.entity';
 import { InjectRepository } from '@nestjs/typeorm/dist/common/typeorm.decorators';
 import { QueryProjectsDto } from './dto/query-projects.dto';
 import { IsNull, Repository } from 'typeorm';
-import { User, UserRole } from '../users/entities/user.entity';
+import { User } from '../users/entities/user.entity';
 import { CreateProjectDto } from './dto/create-project.dto';
 import {
   Document,
@@ -112,12 +108,7 @@ export class ProjectsService {
   }
 
   // ─── SOFT DELETE (... menu on list) ──────────────────────────────────────────
-  async remove(id: number, currentUser: User) {
-    // Only OWNER can delete
-    if (currentUser.role !== UserRole.OWNER) {
-      throw new ForbiddenException('Only owners can delete projects');
-    }
-
+  async remove(id: number) {
     const project = await this.projectRepo.findOne({
       where: { id, deletedAt: IsNull() },
     });

@@ -11,12 +11,15 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 import { VendorsService } from './vendors.service';
 import { CreateVendorDto } from './dto/create-vendor.dto';
 import { QueryVendorsDto } from './dto/query-vendors.dto';
 import { AssignVendorDto } from './dto/assign-vendor.dto';
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('vendors')
 export class VendorsController {
   constructor(private readonly vendorsService: VendorsService) {}
@@ -28,6 +31,7 @@ export class VendorsController {
   }
   // POST /projects/:projectId/vendors/:vendorId  → link existing vendor to project
   @Post('projects/:projectId/vendors/:vendorId')
+  @Roles(UserRole.OWNER, UserRole.ACCOUNTANT)
   assignToProject(
     @Param('projectId', ParseIntPipe) projectId: number,
     @Param('vendorId', ParseIntPipe) vendorId: number,
@@ -56,6 +60,7 @@ export class VendorsController {
   }
   // PATCH /vendors/:id  → edit vendor profile
   @Patch(':id')
+  @Roles(UserRole.OWNER, UserRole.ACCOUNTANT)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: Partial<CreateVendorDto>,
@@ -64,11 +69,13 @@ export class VendorsController {
   }
   // DELETE /vendors/:id
   @Delete(':id')
+  @Roles(UserRole.OWNER, UserRole.ACCOUNTANT)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.vendorsService.remove(id);
   }
   // POST /vendors  → create vendor (+ optional project link)
   @Post()
+  @Roles(UserRole.OWNER, UserRole.ACCOUNTANT)
   create(@Body() dto: CreateVendorDto) {
     return this.vendorsService.create(dto);
   }

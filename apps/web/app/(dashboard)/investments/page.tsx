@@ -9,6 +9,7 @@ import { useInvestments } from "@/hooks/use-investments";
 import { PortfolioStatsRow } from "@/components/investments/portfolio-stats";
 import { InvestmentCard } from "@/components/investments/investment-card";
 import { InvestmentModal } from "@/components/investments/investment-modal";
+import { useIsReadOnly } from "@/hooks/use-is-read-only";
 
 const CATEGORY_OPTIONS = [
   { label: "All Categories", value: "" },
@@ -32,6 +33,7 @@ export default function InvestmentsPage() {
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
+  const isReadOnly = useIsReadOnly();
 
   const { data, isLoading, isError } = useInvestments({
     search: search || undefined,
@@ -59,13 +61,15 @@ export default function InvestmentsPage() {
             performance.
           </p>
         </div>
-        <Button
-          className="bg-[#C9A84C] hover:bg-[#b8963e] text-white gap-2"
-          onClick={() => setModalOpen(true)}
-        >
-          <Plus size={16} />
-          New Investment
-        </Button>
+        {!isReadOnly && (
+          <Button
+            className="bg-[#C9A84C] hover:bg-[#b8963e] text-white gap-2"
+            onClick={() => setModalOpen(true)}
+          >
+            <Plus size={16} />
+            New Investment
+          </Button>
+        )}
       </div>
 
       {/* Portfolio Stats */}
@@ -187,7 +191,9 @@ export default function InvestmentsPage() {
         </div>
       )}
 
-      <InvestmentModal open={modalOpen} onOpenChange={setModalOpen} />
+      {!isReadOnly && (
+        <InvestmentModal open={modalOpen} onOpenChange={setModalOpen} />
+      )}
     </div>
   );
 }

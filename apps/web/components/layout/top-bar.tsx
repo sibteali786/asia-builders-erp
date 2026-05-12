@@ -31,6 +31,7 @@ function getTitle(pathname: string): string {
 function homeTitleByRole(role: string | undefined): string {
   if (role === "ACCOUNTANT") return "Accountant Dashboard";
   if (role === "OWNER") return "Owner Dashboard";
+  if (role === "REVIEWER") return "Reviewer Dashboard";
   return "Dashboard";
 }
 

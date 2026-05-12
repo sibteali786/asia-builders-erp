@@ -77,6 +77,19 @@ async function seed() {
         true,
       ],
     );
+    await qr.query(
+      `INSERT INTO users (email, password_hash, first_name, last_name, phone, role, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+      [
+        'reviewer@asiabuilders.com',
+        passwordHash,
+        'Omar',
+        'Farooq',
+        '0312-5556789',
+        'REVIEWER',
+        true,
+      ],
+    );
 
     // ── 2. Transaction Categories ─────────────────────────────────────────
     console.log('🏷️  Seeding transaction categories...');
@@ -613,9 +626,10 @@ async function seed() {
     console.log('  Login credentials:');
     console.log('  Owner      → admin@asiabuilders.com    / Admin@1234');
     console.log('  Accountant → accounts@asiabuilders.com / Admin@1234');
+    console.log('  Reviewer   → reviewer@asiabuilders.com / Admin@1234');
     console.log('');
     console.log('  Seeded:');
-    console.log('    2 users, 10 transaction categories, 5 vendors');
+    console.log('    3 users, 10 transaction categories, 5 vendors');
     console.log('    3 projects, 4 project-vendor links');
     console.log(
       '    18 transactions (EXPENSE: PAID/DUE, INCOME: RECEIVED with client names)',

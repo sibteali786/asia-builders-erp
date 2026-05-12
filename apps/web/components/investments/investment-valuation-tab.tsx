@@ -74,9 +74,13 @@ function TimelineEntry({
 
 interface Props {
   investment: InvestmentDetail;
+  readOnly?: boolean;
 }
 
-export function InvestmentValuationTab({ investment }: Props) {
+export function InvestmentValuationTab({
+  investment,
+  readOnly = false,
+}: Props) {
   const [updateOpen, setUpdateOpen] = useState(false);
 
   const allUpdates = [...investment.valueUpdates].reverse();
@@ -123,14 +127,16 @@ export function InvestmentValuationTab({ investment }: Props) {
     <div className="pt-4">
       <div className="flex items-center justify-between mb-5">
         <h3 className="font-semibold text-foreground">Valuation Log</h3>
-        <Button
-          size="sm"
-          className="bg-[#C9A84C] hover:bg-[#b8963e] text-white gap-1.5"
-          onClick={() => setUpdateOpen(true)}
-        >
-          <Plus size={14} />
-          Update Value
-        </Button>
+        {!readOnly && (
+          <Button
+            size="sm"
+            className="bg-[#C9A84C] hover:bg-[#b8963e] text-white gap-1.5"
+            onClick={() => setUpdateOpen(true)}
+          >
+            <Plus size={14} />
+            Update Value
+          </Button>
+        )}
       </div>
 
       {entries.length === 0 ? (
@@ -145,12 +151,14 @@ export function InvestmentValuationTab({ investment }: Props) {
         </div>
       )}
 
-      <ValueUpdateModal
-        open={updateOpen}
-        onOpenChange={setUpdateOpen}
-        investmentId={investment.id}
-        currentValue={investment.currentValue}
-      />
+      {!readOnly && (
+        <ValueUpdateModal
+          open={updateOpen}
+          onOpenChange={setUpdateOpen}
+          investmentId={investment.id}
+          currentValue={investment.currentValue}
+        />
+      )}
     </div>
   );
 }

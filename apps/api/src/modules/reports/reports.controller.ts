@@ -2,6 +2,7 @@ import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import { ReportDataService } from './report-data.service';
 import { PdfGenerator } from './pdf.generator';
 import { ExcelGenerator } from './excel.generator';
@@ -34,7 +35,7 @@ function sendFile(
 }
 
 @ApiTags('Reports')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('reports')
 export class ReportsController {
   constructor(

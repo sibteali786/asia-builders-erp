@@ -30,9 +30,14 @@ const CATEGORY_LABELS: Record<string, string> = {
 interface Props {
   investment: InvestmentDetail;
   onEditClick: () => void;
+  readOnly?: boolean;
 }
 
-export function InvestmentDetailHeader({ investment, onEditClick }: Props) {
+export function InvestmentDetailHeader({
+  investment,
+  onEditClick,
+  readOnly = false,
+}: Props) {
   const router = useRouter();
   const updateStatus = useUpdateInvestmentStatus(investment.id);
   const badge = STATUS_BADGES[investment.status];
@@ -81,7 +86,7 @@ export function InvestmentDetailHeader({ investment, onEditClick }: Props) {
         </div>
 
         <div className="flex items-center gap-2">
-          {investment.status === "ACTIVE" && (
+          {!readOnly && investment.status === "ACTIVE" && (
             <Button
               variant="outline"
               size="sm"
@@ -93,15 +98,17 @@ export function InvestmentDetailHeader({ investment, onEditClick }: Props) {
               Mark as Matured
             </Button>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={onEditClick}
-          >
-            <Pencil size={14} />
-            Edit
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={onEditClick}
+            >
+              <Pencil size={14} />
+              Edit
+            </Button>
+          )}
         </div>
       </div>
     </div>

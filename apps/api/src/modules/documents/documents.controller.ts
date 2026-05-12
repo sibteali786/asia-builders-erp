@@ -27,11 +27,14 @@ import { UploadDocumentDto } from './dto/upload-document.dto';
 import { User } from '../users/entities/user.entity';
 import type { Request as ExpressRequest } from 'express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 import { QueryDocumentsDto } from './dto/query-documents.dto';
 
 @ApiTags('Documents')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller()
 export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
@@ -87,6 +90,7 @@ export class DocumentsController {
   })
   @ApiResponse({ status: 201, description: 'Document uploaded successfully' })
   @ApiResponse({ status: 400, description: 'Invalid file type or size' })
+  @Roles(UserRole.OWNER, UserRole.ACCOUNTANT)
   @Post('documents/upload')
   @UseInterceptors(FileInterceptor('file', { storage: undefined })) // undefined = memoryStorage (buffer)
   async upload(
@@ -102,6 +106,7 @@ export class DocumentsController {
   @ApiOperation({ summary: 'Delete a document' })
   @ApiResponse({ status: 200, description: 'Document deleted' })
   @ApiResponse({ status: 404, description: 'Document not found' })
+  @Roles(UserRole.OWNER, UserRole.ACCOUNTANT)
   @Delete('documents/:id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.documentsService.remove(id);

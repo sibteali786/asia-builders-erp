@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "../ui/separator";
 import { formatCurrency } from "@/lib/utils";
+import { useIsReadOnly } from "@/hooks/use-is-read-only";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -67,6 +68,7 @@ function StatusBadge({ status }: { status: Project["status"] }) {
 export function ProjectCard({ project }: { project: Project }) {
   const [editOpen, setEditOpen] = useState(false);
   const deleteProject = useDeleteProject();
+  const isReadOnly = useIsReadOnly();
 
   const isSold = project.status === "SOLD";
   const profit =
@@ -101,27 +103,29 @@ export function ProjectCard({ project }: { project: Project }) {
           </div>
 
           {/* 3-dot menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-accent">
-                <MoreHorizontal size={16} />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem
-                className="gap-2 cursor-pointer"
-                onClick={() => setEditOpen(true)}
-              >
-                <Pencil size={13} /> Edit Project
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="gap-2 cursor-pointer text-destructive focus:text-destructive"
-                onClick={handleDelete}
-              >
-                <Trash2 size={13} /> Delete Project
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {!isReadOnly && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-accent">
+                  <MoreHorizontal size={16} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem
+                  className="gap-2 cursor-pointer"
+                  onClick={() => setEditOpen(true)}
+                >
+                  <Pencil size={13} /> Edit Project
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="gap-2 cursor-pointer text-destructive focus:text-destructive"
+                  onClick={handleDelete}
+                >
+                  <Trash2 size={13} /> Delete Project
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
         <Separator variant="dashed" />
 
@@ -190,12 +194,13 @@ export function ProjectCard({ project }: { project: Project }) {
         </Link>
       </div>
 
-      {/* Edit modal — rendered here so it has access to project data */}
-      <ProjectModal
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        project={project}
-      />
+      {!isReadOnly && (
+        <ProjectModal
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          project={project}
+        />
+      )}
     </>
   );
 }

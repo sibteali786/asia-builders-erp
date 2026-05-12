@@ -9,6 +9,7 @@ import { InvestmentStatsRow } from "@/components/investments/investment-stats-ro
 import { InvestmentOverviewTab } from "@/components/investments/investment-overview-tab";
 import { InvestmentValuationTab } from "@/components/investments/investment-valuation-tab";
 import { InvestmentModal } from "@/components/investments/investment-modal";
+import { useIsReadOnly } from "@/hooks/use-is-read-only";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -18,6 +19,7 @@ export default function InvestmentDetailPage({ params }: Props) {
   const { id } = use(params);
   const investmentId = Number(id);
   const [editOpen, setEditOpen] = useState(false);
+  const isReadOnly = useIsReadOnly();
 
   const { data: investment, isLoading, isError } = useInvestment(investmentId);
 
@@ -48,6 +50,7 @@ export default function InvestmentDetailPage({ params }: Props) {
       <InvestmentDetailHeader
         investment={investment}
         onEditClick={() => setEditOpen(true)}
+        readOnly={isReadOnly}
       />
 
       <InvestmentStatsRow investment={investment} />
@@ -74,16 +77,21 @@ export default function InvestmentDetailPage({ params }: Props) {
           </TabsContent>
 
           <TabsContent value="valuation">
-            <InvestmentValuationTab investment={investment} />
+            <InvestmentValuationTab
+              investment={investment}
+              readOnly={isReadOnly}
+            />
           </TabsContent>
         </Tabs>
       </div>
 
-      <InvestmentModal
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        investment={investment}
-      />
+      {!isReadOnly && (
+        <InvestmentModal
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          investment={investment}
+        />
+      )}
     </div>
   );
 }

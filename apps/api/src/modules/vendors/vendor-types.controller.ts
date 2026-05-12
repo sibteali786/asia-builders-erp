@@ -6,18 +6,19 @@ import {
   Param,
   ParseIntPipe,
   Post,
-  Request,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { VendorTypesService } from './vendor-types.service';
 import { CreateVendorTypeDto } from './dto/create-vendor-type.dto';
-import { User } from '../users/entities/user.entity';
+import { UserRole } from '../users/entities/user.entity';
 
 @ApiTags('VendorTypes')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('vendor-types')
 export class VendorTypesController {
   constructor(private readonly vendorTypesService: VendorTypesService) {}
@@ -29,17 +30,16 @@ export class VendorTypesController {
   }
 
   @Post()
+  @Roles(UserRole.OWNER, UserRole.ACCOUNTANT)
   @ApiOperation({ summary: 'Create a custom vendor type' })
-  create(@Body() dto: CreateVendorTypeDto, @Request() req: { user: User }) {
-    return this.vendorTypesService.create(dto, req.user);
+  create(@Body() dto: CreateVendorTypeDto) {
+    return this.vendorTypesService.create(dto);
   }
 
   @Delete(':id')
+  @Roles(UserRole.OWNER)
   @ApiOperation({ summary: 'Soft-delete a custom vendor type (owner only)' })
-  remove(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req: { user: User },
-  ) {
-    return this.vendorTypesService.remove(id, req.user);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.vendorTypesService.remove(id);
   }
 }

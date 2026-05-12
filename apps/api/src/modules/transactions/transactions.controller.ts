@@ -16,11 +16,14 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { QueryProjectTransactionsDto } from './dto/query-project-transactions.dto';
 import { SettleDuesDto } from './dto/settle-dues.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 import type { Request as ExpressRequest } from 'express';
 import { User } from '../users/entities/user.entity';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller()
 export class TransactionsController {
   constructor(private readonly txService: TransactionsService) {}
@@ -42,6 +45,7 @@ export class TransactionsController {
   }
 
   @Post('transactions/settle')
+  @Roles(UserRole.OWNER, UserRole.ACCOUNTANT)
   settleDues(@Body() dto: SettleDuesDto, @Request() req: ExpressRequest) {
     return this.txService.settleDues(dto, req.user as User);
   }
@@ -97,6 +101,7 @@ export class TransactionsController {
   @ApiResponse({ status: 201, description: 'Transaction created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @Roles(UserRole.OWNER, UserRole.ACCOUNTANT)
   @Post('transactions')
   create(@Body() dto: CreateTransactionDto, @Request() req: ExpressRequest) {
     return this.txService.create(dto, req.user as User);
@@ -108,6 +113,7 @@ export class TransactionsController {
   @ApiResponse({ status: 400, description: 'Invalid input' })
   @ApiResponse({ status: 404, description: 'Transaction not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @Roles(UserRole.OWNER, UserRole.ACCOUNTANT)
   @Patch('transactions/:id')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -122,6 +128,7 @@ export class TransactionsController {
   @ApiResponse({ status: 200, description: 'Transaction deleted successfully' })
   @ApiResponse({ status: 404, description: 'Transaction not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @Roles(UserRole.OWNER, UserRole.ACCOUNTANT)
   @Delete('transactions/:id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.txService.remove(id);

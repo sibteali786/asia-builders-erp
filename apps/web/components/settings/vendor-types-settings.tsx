@@ -9,6 +9,7 @@ import {
   useDeleteVendorType,
 } from "@/hooks/use-vendors";
 import { useAuthStore } from "@/store/auth.store";
+import { useIsReadOnly } from "@/hooks/use-is-read-only";
 
 function getApiMessage(err: unknown, fallback: string): string {
   if (typeof err === "object" && err !== null && "response" in err) {
@@ -24,6 +25,7 @@ export function VendorTypesSettings() {
   const deleteType = useDeleteVendorType();
   const { user } = useAuthStore();
   const isOwner = user?.role === "OWNER";
+  const isReadOnly = useIsReadOnly();
   const [adding, setAdding] = useState(false);
   const [label, setLabel] = useState("");
 
@@ -57,7 +59,7 @@ export function VendorTypesSettings() {
             Manage categories available when creating vendors
           </p>
         </div>
-        {!adding && (
+        {!isReadOnly && !adding && (
           <button
             type="button"
             onClick={() => setAdding(true)}
@@ -68,7 +70,7 @@ export function VendorTypesSettings() {
         )}
       </div>
 
-      {adding && (
+      {adding && !isReadOnly && (
         <div className="flex items-center gap-2">
           <input
             autoFocus
@@ -126,7 +128,7 @@ export function VendorTypesSettings() {
                 </span>
               )}
             </div>
-            {isOwner && !t.isSystemDefined && (
+            {isOwner && !isReadOnly && !t.isSystemDefined && (
               <button
                 type="button"
                 onClick={() =>

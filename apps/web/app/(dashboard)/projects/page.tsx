@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { useIsReadOnly } from "@/hooks/use-is-read-only";
 
 const STATUS_OPTIONS = [
   { label: "All Statuses", value: "" },
@@ -25,6 +26,7 @@ export default function ProjectsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [newOpen, setNewOpen] = useState(false);
+  const isReadOnly = useIsReadOnly();
 
   // useProjects is a React Query hook — it fetches on mount and whenever
   // search/status change. `isLoading` is true on first fetch only.
@@ -77,13 +79,17 @@ export default function ProjectsPage() {
         </DropdownMenu>
 
         {/* New Project button */}
-        <Button
-          onClick={() => setNewOpen(true)}
-          className="bg-[#C9A84C] hover:bg-[#b8963e] text-white rounded-full gap-1.5"
-        >
-          <Plus size={15} /> New Project
-        </Button>
-        <ProjectModal open={newOpen} onOpenChange={setNewOpen} />
+        {!isReadOnly && (
+          <>
+            <Button
+              onClick={() => setNewOpen(true)}
+              className="bg-[#C9A84C] hover:bg-[#b8963e] text-white rounded-full gap-1.5"
+            >
+              <Plus size={15} /> New Project
+            </Button>
+            <ProjectModal open={newOpen} onOpenChange={setNewOpen} />
+          </>
+        )}
       </div>
 
       {/* States */}

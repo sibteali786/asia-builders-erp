@@ -5,6 +5,7 @@ import { FileText, Plus, MoreVertical, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import apiClient from "@/lib/axios";
 import { useUploadDocument } from "@/hooks/use-transactions";
+import { useIsReadOnly } from "@/hooks/use-is-read-only";
 
 interface Doc {
   id: number;
@@ -86,12 +87,14 @@ function Section({
   docs,
   onUpload,
   uploading,
+  readOnly,
 }: {
   title: string;
   count: number;
   docs: Doc[];
   onUpload?: (files: FileList) => void;
   uploading?: boolean;
+  readOnly?: boolean;
 }) {
   return (
     <div className="space-y-3">
@@ -105,7 +108,7 @@ function Section({
         {docs.map((doc) => (
           <DocCard key={doc.id} doc={doc} />
         ))}
-        {title === "Project Documents" && (
+        {title === "Project Documents" && !readOnly && (
           <label
             className={`rounded-xl border border-dashed border-border p-4 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:bg-accent cursor-pointer transition-colors min-h-[11rem] ${uploading ? "opacity-60 pointer-events-none" : ""}`}
           >
@@ -136,6 +139,7 @@ function Section({
 
 export function DocumentsTab({ projectId }: { projectId: number }) {
   const upload = useUploadDocument();
+  const isReadOnly = useIsReadOnly();
 
   async function handleUpload(files: FileList) {
     const fileArray = Array.from(files);
@@ -183,6 +187,7 @@ export function DocumentsTab({ projectId }: { projectId: number }) {
         docs={projectDocs}
         onUpload={handleUpload}
         uploading={upload.isPending}
+        readOnly={isReadOnly}
       />
 
       <div className="border-t border-border" />
