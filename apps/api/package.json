@@ -25,6 +25,7 @@
     "migration:run": "dotenv -e .env -- typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts",
     "migration:revert": "dotenv -e .env -- typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts",
     "seed": "dotenv -e .env -- ts-node -r tsconfig-paths/register src/database/seed.ts",
+    "db:prune": "dotenv -e .env -- ts-node -r tsconfig-paths/register src/database/prune.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
