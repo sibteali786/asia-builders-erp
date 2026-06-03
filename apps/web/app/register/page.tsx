@@ -97,6 +97,16 @@ export default function RegisterPage() {
 
       {/* Card */}
       <div className="relative z-10 w-full max-w-md mx-4 bg-white rounded-2xl shadow-xl px-10 py-10">
+        {/* Disabled banner */}
+        <div className="mb-6 flex flex-col items-center gap-1 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-center">
+          <p className="text-sm font-semibold text-red-700">
+            Account registration is disabled.
+          </p>
+          <p className="text-xs text-red-500">
+            Contact your administrator to get access.
+          </p>
+        </div>
+
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <Image
@@ -133,6 +143,7 @@ export default function RegisterPage() {
                     {...field}
                     id="firstName"
                     placeholder="John"
+                    disabled
                     aria-invalid={fieldState.invalid}
                     className="focus-visible:ring-[#C9A84C]/30 focus-visible:border-[#C9A84C]"
                   />
@@ -158,6 +169,7 @@ export default function RegisterPage() {
                     {...field}
                     id="lastName"
                     placeholder="Doe"
+                    disabled
                     aria-invalid={fieldState.invalid}
                     className="focus-visible:ring-[#C9A84C]/30 focus-visible:border-[#C9A84C]"
                   />
@@ -185,6 +197,7 @@ export default function RegisterPage() {
                     id="email"
                     type="email"
                     placeholder="name@company.com"
+                    disabled
                     aria-invalid={fieldState.invalid}
                     className="focus-visible:ring-[#C9A84C]/30 focus-visible:border-[#C9A84C]"
                   />
@@ -218,6 +231,7 @@ export default function RegisterPage() {
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
+                      disabled
                       aria-invalid={fieldState.invalid}
                       className="pr-11 focus-visible:ring-[#C9A84C]/30 focus-visible:border-[#C9A84C]"
                     />
@@ -252,7 +266,11 @@ export default function RegisterPage() {
                     Role
                   </FieldLabel>
                   {/* Select from shadcn uses value/onValueChange, not value/onChange */}
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled
+                  >
                     <SelectTrigger
                       id="role"
                       aria-invalid={fieldState.invalid}
@@ -295,6 +313,7 @@ export default function RegisterPage() {
                     id="phone"
                     type="tel"
                     placeholder="+92 300 0000000"
+                    disabled
                     aria-invalid={fieldState.invalid}
                     className="focus-visible:ring-[#C9A84C]/30 focus-visible:border-[#C9A84C]"
                   />
@@ -314,7 +333,7 @@ export default function RegisterPage() {
 
             <Button
               type="submit"
-              disabled={register.isPending}
+              disabled
               className="w-full bg-[#C9A84C] hover:bg-[#b8963e] text-white font-semibold rounded-full py-3.5 h-auto disabled:opacity-60"
             >
               {register.isPending ? "Creating account..." : "Sign In"}

@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -8,6 +8,10 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 
 @ApiTags('Authentication')
 @ApiBearerAuth()
@@ -19,6 +23,8 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 409, description: 'Conflict - User already exists' })
   @Post('register')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.OWNER)
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
