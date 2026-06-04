@@ -78,6 +78,20 @@ async function prune() {
       ['asiabuilderzpk@gmail.com', passwordHash, 'Rauf', 'Khan', 'OWNER', true],
     );
 
+    const accountantHash = await bcrypt.hash('Builders@123', 10);
+    const accountants = [
+      ['adab.hussain0@gmail.com', 'Adab', 'Hussain'],
+      ['azharaziz13@gmail.com', 'Azhar', 'Aziz'],
+      ['muddasarhussain10@gmail.com', 'Mudassar', 'Hussain'],
+    ];
+    for (const [email, firstName, lastName] of accountants) {
+      await qr.query(
+        `INSERT INTO users (email, password_hash, first_name, last_name, role, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [email, accountantHash, firstName, lastName, 'ACCOUNTANT', true],
+      );
+    }
+
     await qr.query(`
       INSERT INTO vendor_types (slug, label, is_contractor, is_system_defined, is_active)
       VALUES
@@ -103,6 +117,11 @@ async function prune() {
     console.log(
       '   Vendor Types → CONTRACTOR (contractor), SUPPLIER, SERVICE restored',
     );
+    console.log('');
+    console.log('   Accountant accounts created (password: Builders@123):');
+    console.log('   → adab.hussain0@gmail.com');
+    console.log('   → azharaziz13@gmail.com');
+    console.log('   → muddasarhussain10@gmail.com');
     console.log('');
   } catch (err) {
     await qr.rollbackTransaction();
