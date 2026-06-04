@@ -45,7 +45,18 @@ async function seed() {
     await qr.query(
       `TRUNCATE TABLE transaction_categories RESTART IDENTITY CASCADE`,
     );
+    await qr.query(`TRUNCATE TABLE vendor_types RESTART IDENTITY CASCADE`);
     await qr.query(`TRUNCATE TABLE users RESTART IDENTITY CASCADE`);
+
+    // ── 0. System Vendor Types ────────────────────────────────────────────
+    console.log('🏷️  Seeding system vendor types...');
+    await qr.query(`
+      INSERT INTO vendor_types (slug, label, is_contractor, is_system_defined, is_active)
+      VALUES
+        ('CONTRACTOR', 'Contractor', true,  true, true),
+        ('SUPPLIER',   'Supplier',   false, true, true),
+        ('SERVICE',    'Service',    false, true, true)
+    `);
 
     // ── 1. Users ──────────────────────────────────────────────────────────
     console.log('👤 Seeding users...');
@@ -629,7 +640,9 @@ async function seed() {
     console.log('  Reviewer   → reviewer@asiabuilders.com / Admin@1234');
     console.log('');
     console.log('  Seeded:');
-    console.log('    3 users, 10 transaction categories, 5 vendors');
+    console.log(
+      '    3 system vendor types, 3 users, 10 transaction categories, 5 vendors',
+    );
     console.log('    3 projects, 4 project-vendor links');
     console.log(
       '    18 transactions (EXPENSE: PAID/DUE, INCOME: RECEIVED with client names)',

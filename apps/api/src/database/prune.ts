@@ -78,6 +78,18 @@ async function prune() {
       ['asiabuilderzpk@gmail.com', passwordHash, 'Rauf', 'Khan', 'OWNER', true],
     );
 
+    await qr.query(`
+      INSERT INTO vendor_types (slug, label, is_contractor, is_system_defined, is_active)
+      VALUES
+        ('CONTRACTOR', 'Contractor', true,  true, true),
+        ('SUPPLIER',   'Supplier',   false, true, true),
+        ('SERVICE',    'Service',    false, true, true)
+      ON CONFLICT (slug) DO UPDATE SET
+        is_contractor     = EXCLUDED.is_contractor,
+        is_system_defined = EXCLUDED.is_system_defined,
+        is_active         = true
+    `);
+
     await qr.commitTransaction();
 
     console.log('');
@@ -87,6 +99,10 @@ async function prune() {
     console.log('   Email    → asiabuilderzpk@gmail.com');
     console.log('   Password → Password@1234');
     console.log('   Role     → OWNER');
+    console.log('');
+    console.log(
+      '   Vendor Types → CONTRACTOR (contractor), SUPPLIER, SERVICE restored',
+    );
     console.log('');
   } catch (err) {
     await qr.rollbackTransaction();

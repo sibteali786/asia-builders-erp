@@ -25,11 +25,18 @@ export class VendorTypesService {
   async create(dto: CreateVendorTypeDto): Promise<VendorTypeEntity> {
     const slug = dto.label.trim().toUpperCase().replace(/\s+/g, '_');
     const existing = await this.repo.findOne({ where: { slug } });
+
     if (existing) {
-      throw new BadRequestException(
-        `A vendor type named "${dto.label.trim()}" already exists`,
-      );
+      if (existing.isActive) {
+        throw new BadRequestException(
+          `A vendor type named "${dto.label.trim()}" already exists`,
+        );
+      }
+      // Reactivate soft-deleted type — preserves isContractor and isSystemDefined
+      existing.isActive = true;
+      return this.repo.save(existing);
     }
+
     return this.repo.save(
       this.repo.create({
         slug,
