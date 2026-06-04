@@ -268,24 +268,25 @@ export class VendorsService {
       AND t2.transaction_type = 'EXPENSE'
       AND t2.status = 'PAID'
       AND t2.deleted_at IS NULL
-   )                                             AS "amountPaid"`,
+    )                                             AS "amountPaid"`,
         `(SELECT COALESCE(SUM(t2.amount - t2.settled_amount), 0)
     FROM transactions t2
     WHERE t2.vendor_id = v.id
       AND t2.transaction_type = 'EXPENSE'
       AND t2.status IN ('DUE', 'PARTIALLY_SETTLED')
       AND t2.deleted_at IS NULL
-   )                                             AS outstanding`,
+    )                                             AS outstanding`,
         `JSON_AGG(
     DISTINCT JSONB_BUILD_OBJECT(
       'projectId',   p.id,
       'projectName', p.name,
       'paid', (SELECT COALESCE(SUM(t3.amount), 0)
-               FROM transactions t3
-               WHERE t3.vendor_id = v.id
-                 AND t3.project_id = p.id
-                 AND t3.transaction_type = 'EXPENSE'
-                 AND t3.deleted_at IS NULL)
+              FROM transactions t3
+              WHERE t3.vendor_id = v.id
+              AND t3.project_id = p.id
+              AND t3.transaction_type = 'EXPENSE'
+              AND t3.status IN ('PAID', 'SETTLED')
+              AND t3.deleted_at IS NULL)
     )
   ) FILTER (WHERE p.id IS NOT NULL)              AS "activeProjects"`,
       ])

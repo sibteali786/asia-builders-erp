@@ -25,7 +25,7 @@ export class ProjectsService {
       .leftJoin(
         'p.transactions',
         't',
-        "t.transaction_type = 'EXPENSE' AND t.deleted_at IS NULL",
+        "t.transaction_type = 'EXPENSE' AND t.status IN ('PAID', 'SETTLED') AND t.deleted_at IS NULL",
       )
       .select([
         'p.id AS id',
@@ -63,7 +63,7 @@ export class ProjectsService {
       .leftJoin(
         'p.transactions',
         't',
-        "t.transaction_type = 'EXPENSE' AND t.deleted_at IS NULL",
+        "t.transaction_type = 'EXPENSE' AND t.status IN ('PAID', 'SETTLED') AND t.deleted_at IS NULL",
       )
       .select([
         'p.id              AS id',

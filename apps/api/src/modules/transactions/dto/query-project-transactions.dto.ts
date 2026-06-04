@@ -1,7 +1,14 @@
-import { IsOptional, IsEnum, IsString, IsInt, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import {
+  IsOptional,
+  IsEnum,
+  IsString,
+  IsInt,
+  Min,
+  IsBoolean,
+} from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 import { TransactionType } from '../entities/transaction.entity';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class QueryProjectTransactionsDto {
   @ApiProperty({
@@ -62,4 +69,14 @@ export class QueryProjectTransactionsDto {
   @IsOptional()
   @IsInt()
   vendorId?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'When true, hides DUE and PARTIALLY_SETTLED transactions from results',
+    example: true,
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  hideUnpaid?: boolean;
 }

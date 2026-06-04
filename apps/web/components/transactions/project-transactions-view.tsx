@@ -34,6 +34,7 @@ interface Props {
   backHref?: string; // if set, back button uses router.push; else router.back()
   backLabel?: string; // label next to back arrow
   vendorFooter?: VendorFooter; // if set, shows Paid/Outstanding/Agreement footer
+  hideUnpaid?: boolean; // when true, hides DUE and PARTIALLY_SETTLED rows
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -53,6 +54,13 @@ const STATUS_STYLE: Record<string, string> = {
   PARTIALLY_SETTLED: "bg-amber-100 text-amber-700",
   SETTLED: "bg-emerald-100 text-emerald-700",
 };
+
+function formatCompact(n: number): string {
+  const abs = Math.abs(n);
+  if (abs >= 10_000_000) return `${(n / 1_000_000).toFixed(1)}M Rs`;
+  if (abs >= 100_000) return `${(n / 1_000).toFixed(0)}K Rs`;
+  return `${n.toLocaleString()} Rs`;
+}
 
 // ── Table row ─────────────────────────────────────────────────────────────────
 
@@ -87,6 +95,12 @@ function TxRow({ tx }: { tx: Transaction }) {
       >
         {tx.amount >= 0 ? "+" : "-"}
         {formatCurrency(tx.amount)}
+        {tx.status === "PARTIALLY_SETTLED" && tx.settledAmount > 0 && (
+          <p className="text-[10px] text-muted-foreground mt-0.5 font-normal">
+            {formatCompact(tx.settledAmount)} settled &middot;{" "}
+            {formatCompact(Math.abs(tx.amount) - tx.settledAmount)} remaining
+          </p>
+        )}
       </td>
       <td className="py-3.5 pr-4">
         <span
@@ -200,6 +214,7 @@ export function ProjectTransactionsView({
   backHref,
   backLabel = "Back",
   vendorFooter,
+  hideUnpaid,
 }: Props) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -214,6 +229,7 @@ export function ProjectTransactionsView({
     page,
     limit: 15,
     vendorId,
+    hideUnpaid,
   });
   const transactions = data?.data ?? [];
   const meta = data?.meta;

@@ -86,6 +86,7 @@ export function useAllTransactions(
     search?: string;
     type?: string;
     vendorId?: number;
+    hideUnpaid?: boolean;
   } = {},
 ) {
   return useQuery({
@@ -107,6 +108,7 @@ export function useAllTransactions(
           ...(params.search && { search: params.search }),
           ...(params.type && { type: params.type }),
           ...(params.vendorId && { vendorId: params.vendorId }),
+          ...(params.hideUnpaid && { hideUnpaid: true }),
           limit: params.limit ?? 15,
         },
       });

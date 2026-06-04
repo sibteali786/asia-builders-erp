@@ -18,6 +18,7 @@ export default function ProjectTransactionsPage({
       projectId={projectId}
       projectName={project?.name}
       backLabel="Back"
+      hideUnpaid={true}
     />
   );
 }

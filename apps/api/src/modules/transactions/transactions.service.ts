@@ -246,6 +246,9 @@ export class TransactionsService {
         q: `%${search}%`,
       });
     }
+    if (query.hideUnpaid) {
+      qb.andWhere("t.status IN ('PAID', 'SETTLED', 'RECEIVED')");
+    }
 
     const countQb = this.txRepo
       .createQueryBuilder('t')
@@ -261,6 +264,9 @@ export class TransactionsService {
       countQb.andWhere('(t.description ILIKE :q OR vendor.name ILIKE :q)', {
         q: `%${search}%`,
       });
+    }
+    if (query.hideUnpaid) {
+      countQb.andWhere("t.status IN ('PAID', 'SETTLED', 'RECEIVED')");
     }
 
     const [rows, countResult] = await Promise.all([
@@ -295,8 +301,8 @@ export class TransactionsService {
     const totals = data.reduce(
       (acc, t) => {
         if (t.amount < 0) {
-          acc.totalDebits += Math.abs(t.amount);
           if (t.status === 'PAID' || t.status === 'SETTLED') {
+            acc.totalDebits += Math.abs(t.amount);
             acc.paidAmount += Math.abs(t.amount);
           } else if (t.status === 'DUE') {
             acc.dueAmount += Math.abs(t.amount);
