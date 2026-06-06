@@ -168,6 +168,98 @@ async function seed() {
       ],
     );
 
+    // ── Extra vendors for UI pagination/scroll testing ────────────────────
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, contact_person, phone) VALUES ($1, $2, $3, $4)`,
+      ['Lahore Electric Works', 'SERVICE', 'Tariq Mehmood', '0300-6660001'],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, phone) VALUES ($1, $2, $3)`,
+      ['Punjab Cement Traders', 'SUPPLIER', '0321-6660002'],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, contact_person, phone) VALUES ($1, $2, $3, $4)`,
+      ['Al-Rehman Plumbers', 'SERVICE', 'Rehman Ali', '0333-6660003'],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, phone) VALUES ($1, $2, $3)`,
+      ['Karachi Tile House', 'SUPPLIER', '0312-6660004'],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, contact_person, phone) VALUES ($1, $2, $3, $4)`,
+      ['Sunrise Electrical Co.', 'CONTRACTOR', 'Nasir Hussain', '0345-6660005'],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, phone) VALUES ($1, $2, $3)`,
+      ['Green Build Supplies', 'SUPPLIER', '0311-6660006'],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, contact_person, phone) VALUES ($1, $2, $3, $4)`,
+      ['Metro Civil Works', 'CONTRACTOR', 'Usman Ghani', '0300-6660007'],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, phone) VALUES ($1, $2, $3)`,
+      ['Faisal Glass & Aluminum', 'SUPPLIER', '0321-6660008'],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, contact_person, phone) VALUES ($1, $2, $3, $4)`,
+      ['Capital Interiors', 'SERVICE', 'Ayesha Tariq', '0333-6660009'],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, phone) VALUES ($1, $2, $3)`,
+      ['Pak Paints & Chemicals', 'SUPPLIER', '0312-6660010'],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, contact_person, phone) VALUES ($1, $2, $3, $4)`,
+      [
+        'Rawalpindi Roofing Co.',
+        'CONTRACTOR',
+        'Bilal Chaudhry',
+        '0345-6660011',
+      ],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, phone) VALUES ($1, $2, $3)`,
+      ['SafePro Security Systems', 'SERVICE', '0311-6660012'],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, contact_person, phone) VALUES ($1, $2, $3, $4)`,
+      ['Star Woodworks', 'SUPPLIER', 'Hamid Iqbal', '0300-6660013'],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, phone) VALUES ($1, $2, $3)`,
+      ['Horizon HVAC Solutions', 'SERVICE', '0321-6660014'],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, contact_person, phone) VALUES ($1, $2, $3, $4)`,
+      [
+        'Diamond Drilling & Cutting',
+        'CONTRACTOR',
+        'Zulfiqar Shah',
+        '0333-6660015',
+      ],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, phone) VALUES ($1, $2, $3)`,
+      ['National Hardware Store', 'SUPPLIER', '0312-6660016'],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, contact_person, phone) VALUES ($1, $2, $3, $4)`,
+      ['Islamabad Landscaping', 'SERVICE', 'Sara Malik', '0345-6660017'],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, phone) VALUES ($1, $2, $3)`,
+      ['Crescent Scaffolding', 'CONTRACTOR', '0311-6660018'],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, contact_person, phone) VALUES ($1, $2, $3, $4)`,
+      ['Al-Noor Sanitary Fittings', 'SUPPLIER', 'Noor Ahmed', '0300-6660019'],
+    );
+    await qr.query(
+      `INSERT INTO vendors (name, vendor_type, phone) VALUES ($1, $2, $3)`,
+      ['TechBuild Consultants', 'SERVICE', '0321-6660020'],
+    );
+
     // ── 4. Projects ───────────────────────────────────────────────────────
     console.log('🏢 Seeding projects...');
 

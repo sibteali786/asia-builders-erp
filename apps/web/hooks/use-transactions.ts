@@ -149,7 +149,7 @@ export function useVendorOptions() {
           vendorType: string;
           isContractor: boolean;
         }[];
-      }>("/vendors");
+      }>("/vendors", { params: { limit: 500 } });
       return res.data.data;
     },
   });
