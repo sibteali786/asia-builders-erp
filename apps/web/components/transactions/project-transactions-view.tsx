@@ -469,6 +469,48 @@ export function ProjectTransactionsView({
         )}
       </div>
 
+      {/* Overall totals across all matching transactions (ignores pagination) */}
+      {data?.overallTotals && (
+        <p className="text-xs text-muted-foreground px-1">
+          <span className="font-semibold text-foreground">
+            Overall totals ({meta?.total ?? 0} matching transactions):
+          </span>{" "}
+          {vendorId ? (
+            <>
+              Paid{" "}
+              <span className="text-green-600 font-semibold">
+                {formatCurrency(data.overallTotals.paidAmount ?? 0)}
+              </span>
+              {" · "}
+              Outstanding{" "}
+              <span className="text-[#C9A84C] font-semibold">
+                {formatCurrency(data.overallTotals.dueAmount ?? 0)}
+              </span>
+            </>
+          ) : (
+            <>
+              Total Debits{" "}
+              <span className="text-red-500 font-semibold">
+                {formatCurrency(data.overallTotals.totalDebits)}
+              </span>
+              {" · "}
+              Total Credits{" "}
+              <span className="text-green-600 font-semibold">
+                {formatCurrency(data.overallTotals.totalCredits)}
+              </span>
+            </>
+          )}
+          {" · "}
+          Net Flow{" "}
+          <span
+            className={`font-semibold ${data.overallTotals.netFlow >= 0 ? "text-green-600" : "text-red-500"}`}
+          >
+            {data.overallTotals.netFlow >= 0 ? "+" : "-"}
+            {formatCurrency(Math.abs(data.overallTotals.netFlow))}
+          </span>
+        </p>
+      )}
+
       {!isReadOnly && (
         <TransactionModal
           open={modalOpen}

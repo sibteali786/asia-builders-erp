@@ -21,6 +21,7 @@ export interface GlobalTransactionResponse {
   data: GlobalTransaction[];
   meta: TransactionMeta;
   totals: { totalDebits: number; totalCredits: number; netFlow: number };
+  overallTotals: { totalDebits: number; totalCredits: number; netFlow: number };
 }
 
 export interface Transaction {
@@ -96,6 +97,13 @@ export function useAllTransactions(
         data: Transaction[];
         meta: TransactionMeta;
         totals: {
+          totalDebits: number;
+          totalCredits: number;
+          netFlow: number;
+          paidAmount: number;
+          dueAmount: number;
+        };
+        overallTotals: {
           totalDebits: number;
           totalCredits: number;
           netFlow: number;

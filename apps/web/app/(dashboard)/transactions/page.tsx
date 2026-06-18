@@ -314,6 +314,32 @@ export default function TransactionsPage() {
         )}
       </div>
 
+      {/* Overall totals across all matching transactions (ignores pagination) */}
+      {data?.overallTotals && (
+        <p className="text-xs text-muted-foreground px-1">
+          <span className="font-semibold text-foreground">
+            Overall totals across all matching transactions:
+          </span>{" "}
+          Total Debits{" "}
+          <span className="text-red-500 font-semibold">
+            {formatCurrency(data.overallTotals.totalDebits)}
+          </span>
+          {" · "}
+          Total Credits{" "}
+          <span className="text-green-600 font-semibold">
+            {formatCurrency(data.overallTotals.totalCredits)}
+          </span>
+          {" · "}
+          Net Flow{" "}
+          <span
+            className={`font-semibold ${data.overallTotals.netFlow >= 0 ? "text-green-600" : "text-red-500"}`}
+          >
+            {data.overallTotals.netFlow >= 0 ? "+" : "-"}
+            {formatCurrency(Math.abs(data.overallTotals.netFlow))}
+          </span>
+        </p>
+      )}
+
       {/* Drawer */}
       <TransactionDrawer
         transaction={selected}

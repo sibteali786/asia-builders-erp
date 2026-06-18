@@ -127,12 +127,39 @@ export class TransactionsService {
       );
     }
 
-    const [rows, countResult] = await Promise.all([
+    const overallQb = this.txRepo
+      .createQueryBuilder('t')
+      .leftJoin('t.vendor', 'vendor')
+      .leftJoin('t.project', 'project')
+      .select(
+        `COALESCE(SUM(CASE WHEN t.transaction_type = 'EXPENSE' THEN ABS(t.amount) ELSE 0 END), 0)`,
+        'totalDebits',
+      )
+      .addSelect(
+        `COALESCE(SUM(CASE WHEN t.transaction_type = 'INCOME' THEN ABS(t.amount) ELSE 0 END), 0)`,
+        'totalCredits',
+      )
+      .where('t.deleted_at IS NULL');
+
+    if (type) overallQb.andWhere('t.transaction_type = :type', { type });
+    if (projectId)
+      overallQb.andWhere('t.project_id = :projectId', { projectId });
+    if (search) {
+      overallQb.andWhere(
+        '(t.description ILIKE :q OR vendor.name ILIKE :q OR project.name ILIKE :q)',
+        { q: `%${search}%` },
+      );
+    }
+
+    const [rows, countResult, overallResult] = await Promise.all([
       qb.getRawMany<RawTransactionRow>(),
       countQb.getRawOne<{ cnt: string }>(),
+      overallQb.getRawOne<{ totalDebits: string; totalCredits: string }>(),
     ]);
 
     const total = Number(countResult?.cnt ?? 0);
+    const overallTotalDebits = Number(overallResult?.totalDebits ?? 0);
+    const overallTotalCredits = Number(overallResult?.totalCredits ?? 0);
 
     let balance = 0;
     const data = rows.map((r) => {
@@ -176,6 +203,11 @@ export class TransactionsService {
       data,
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
       totals: { ...totals, netFlow: totals.totalCredits - totals.totalDebits },
+      overallTotals: {
+        totalDebits: overallTotalDebits,
+        totalCredits: overallTotalCredits,
+        netFlow: overallTotalCredits - overallTotalDebits,
+      },
     };
   }
 
@@ -269,12 +301,53 @@ export class TransactionsService {
       countQb.andWhere("t.status IN ('PAID', 'SETTLED', 'RECEIVED')");
     }
 
-    const [rows, countResult] = await Promise.all([
+    const overallQb = this.txRepo
+      .createQueryBuilder('t')
+      .leftJoin('t.vendor', 'vendor')
+      .select(
+        `COALESCE(SUM(CASE WHEN t.transaction_type = 'EXPENSE' AND t.status IN ('PAID', 'SETTLED') THEN ABS(t.amount) ELSE 0 END), 0)`,
+        'paidAmount',
+      )
+      .addSelect(
+        `COALESCE(SUM(CASE
+          WHEN t.status = 'DUE' THEN ABS(t.amount)
+          WHEN t.status = 'PARTIALLY_SETTLED' THEN GREATEST(ABS(t.amount) - t.settled_amount, 0)
+          ELSE 0 END), 0)`,
+        'dueAmount',
+      )
+      .addSelect(
+        `COALESCE(SUM(CASE WHEN t.transaction_type = 'INCOME' THEN ABS(t.amount) ELSE 0 END), 0)`,
+        'totalCredits',
+      )
+      .where('t.project_id = :projectId AND t.deleted_at IS NULL', {
+        projectId,
+      });
+
+    if (vendorId) overallQb.andWhere('t.vendor_id = :vendorId', { vendorId });
+    if (type) overallQb.andWhere('t.transaction_type = :type', { type });
+    if (search) {
+      overallQb.andWhere('(t.description ILIKE :q OR vendor.name ILIKE :q)', {
+        q: `%${search}%`,
+      });
+    }
+    if (query.hideUnpaid) {
+      overallQb.andWhere("t.status IN ('PAID', 'SETTLED', 'RECEIVED')");
+    }
+
+    const [rows, countResult, overallResult] = await Promise.all([
       qb.getRawMany<RawTransactionRow>(),
       countQb.getRawOne<{ cnt: string }>(),
+      overallQb.getRawOne<{
+        paidAmount: string;
+        dueAmount: string;
+        totalCredits: string;
+      }>(),
     ]);
 
     const total = Number(countResult?.cnt ?? 0);
+    const overallPaidAmount = Number(overallResult?.paidAmount ?? 0);
+    const overallDueAmount = Number(overallResult?.dueAmount ?? 0);
+    const overallTotalCredits = Number(overallResult?.totalCredits ?? 0);
 
     const data = rows.map((r) => ({
       id: Number(r.id),
@@ -324,6 +397,13 @@ export class TransactionsService {
       data,
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
       totals: { ...totals, netFlow: totals.totalCredits - totals.totalDebits },
+      overallTotals: {
+        totalDebits: overallPaidAmount,
+        totalCredits: overallTotalCredits,
+        paidAmount: overallPaidAmount,
+        dueAmount: overallDueAmount,
+        netFlow: overallTotalCredits - overallPaidAmount,
+      },
     };
   }
 
